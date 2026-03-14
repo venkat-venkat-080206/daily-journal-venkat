@@ -1,0 +1,3591 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Daily Journal</title>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=DM+Serif+Display:ital@0;1&display=swap"
+    rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent
+    }
+
+    :root {
+      --blue: #007AFF;
+      --green: #30D158;
+      --orange: #FF9F0A;
+      --red: #FF453A;
+      --purple: #BF5AF2;
+      --teal: #32ADE6;
+      --indigo: #5E5CE6;
+      --pink: #FF375F;
+      --emerald: #00C896;
+      --amber: #FFB340;
+      --bg: #F2F2F7;
+      --card: #FFFFFF;
+      --card2: #F9F9FB;
+      --t1: #1C1C1E;
+      --t2: #3C3C43;
+      --t3: #8E8E93;
+      --sep: rgba(60, 60, 67, 0.13);
+      --r: 16px;
+      --rlg: 22px;
+      --shadow: 0 2px 20px rgba(0, 0, 0, 0.06);
+    }
+
+    html {
+      min-height: 100%;
+    }
+
+    body {
+      min-height: 100%;
+      overflow-x: hidden;
+      font-family: 'DM Sans', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--t1);
+      padding-bottom: 90px;
+      overscroll-behavior: none;
+    }
+
+    .serif {
+      font-family: 'DM Serif Display', serif
+    }
+
+    /* ── AUTH SCREEN ── */
+    #auth-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      background: linear-gradient(135deg, #F2F2F7, #E5E5EA);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      transition: opacity 0.4s ease;
+    }
+
+    .auth-card {
+      background: var(--card);
+      border-radius: 32px;
+      padding: 48px 32px 40px;
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+      animation: authPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .auth-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 6px;
+      background: linear-gradient(90deg, var(--blue), var(--purple), var(--orange));
+    }
+
+    @keyframes authPop {
+      0% { opacity: 0; transform: scale(0.9) translateY(20px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .auth-logo-wrap {
+      width: 72px;
+      height: 72px;
+      background: linear-gradient(135deg, rgba(0,122,255,0.1), rgba(191,90,242,0.1));
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+      color: var(--blue);
+      box-shadow: inset 0 0 0 1px rgba(0,122,255,0.15);
+    }
+
+    .auth-title {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: var(--t1);
+      margin-bottom: 8px;
+    }
+
+    .auth-subtitle {
+      font-size: 15px;
+      color: var(--t3);
+      line-height: 1.5;
+      margin-bottom: 40px;
+      padding: 0 10px;
+    }
+
+    .btn-google {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      width: 100%;
+      padding: 16px;
+      background: #FFFFFF;
+      border: 1.5px solid var(--sep);
+      border-radius: 16px;
+      color: var(--t1);
+      font-size: 16px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .btn-google:active {
+      background: var(--card2);
+      transform: scale(0.98);
+      border-color: #d1d1d6;
+    }
+
+    .btn-google svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .auth-footer-text {
+      margin-top: 24px;
+      font-size: 12px;
+      color: var(--t3);
+      line-height: 1.5;
+    }
+
+    /* ── APP CONTAINER ── */
+    #app-container {
+      display: none; /* Hidden until authenticated */
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(242, 242, 247, 0.85);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-bottom: 0.5px solid var(--sep);
+      padding: 14px 18px 12px
+    }
+
+    .header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between
+    }
+
+    .header-date {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .8px;
+      text-transform: uppercase;
+      color: var(--t3);
+      margin-bottom: 2px
+    }
+
+    .header-title {
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing: -.5px;
+      line-height: 1
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px
+    }
+
+    .icon-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: var(--card);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      transition: transform .15s, box-shadow .15s;
+      color: var(--blue)
+    }
+
+    .icon-btn:active {
+      transform: scale(.92)
+    }
+
+    /* ── TABS ── */
+    .tab-content {
+      display: none;
+      animation: fadeUp .28s cubic-bezier(.4, 0, .2, 1)
+    }
+
+    .tab-content.active {
+      display: block
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    .main-content {
+      padding: 16px 16px 0;
+      max-width: 480px;
+      margin: 0 auto
+    }
+
+    /* ── NAV BAR ── */
+    .nav-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-top: 0.5px solid var(--sep);
+      padding-bottom: env(safe-area-inset-bottom, 6px)
+    }
+
+    .nav-inner {
+      display: flex;
+      max-width: 480px;
+      margin: 0 auto;
+      height: 58px
+    }
+
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: var(--t3);
+      transition: color .2s;
+      padding: 6px 2px
+    }
+
+    .nav-item.active {
+      color: var(--blue)
+    }
+
+    .nav-item svg {
+      transition: transform .25s cubic-bezier(.34, 1.56, .64, 1)
+    }
+
+    .nav-item.active svg {
+      transform: scale(1.18)
+    }
+
+    .nav-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .2px
+    }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--card);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      margin-bottom: 14px
+    }
+
+    .card-pad {
+      padding: 16px
+    }
+
+    .card-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 16px;
+      border-bottom: 0.5px solid var(--sep);
+      cursor: pointer;
+      transition: background .15s
+    }
+
+    .card-row:last-child {
+      border-bottom: none
+    }
+
+    .card-row:active {
+      background: var(--card2)
+    }
+
+    .row-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0
+    }
+
+    .row-body {
+      flex: 1;
+      min-width: 0
+    }
+
+    .row-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--t1)
+    }
+
+    .row-sub {
+      font-size: 12px;
+      color: var(--t3);
+      margin-top: 1px
+    }
+
+    .row-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--t3)
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .7px;
+      text-transform: uppercase;
+      color: var(--t3);
+      margin: 18px 4px 8px
+    }
+
+    /* ── CHECK ── */
+    .check {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 2px solid var(--sep);
+      background: transparent;
+      cursor: pointer;
+      transition: all .22s cubic-bezier(.34, 1.2, .64, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0
+    }
+
+    .check.on {
+      background: var(--green);
+      border-color: var(--green)
+    }
+
+    .check.on::after {
+      content: '';
+      display: block;
+      width: 8px;
+      height: 5px;
+      border-left: 2.5px solid #fff;
+      border-bottom: 2.5px solid #fff;
+      transform: rotate(-45deg) translateY(-1px)
+    }
+
+    /* ── TOGGLE ── */
+    .toggle {
+      appearance: none;
+      width: 51px;
+      height: 31px;
+      background: #ddd;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: background .2s;
+      position: relative;
+      flex-shrink: 0
+    }
+
+    .toggle::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 25px;
+      height: 25px;
+      background: #fff;
+      border-radius: 50%;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .18);
+      transition: left .22s cubic-bezier(.34, 1.2, .64, 1)
+    }
+
+    .toggle:checked {
+      background: var(--green)
+    }
+
+    .toggle:checked::after {
+      left: 23px
+    }
+
+    /* ── INPUTS & DROPDOWNS ── */
+    .ios-input {
+      width: 100%;
+      background: var(--card2);
+      border: 1.5px solid transparent;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 16px;
+      font-family: inherit;
+      color: var(--t1);
+      outline: none;
+      transition: border-color .2s, box-shadow .2s
+    }
+
+    .ios-input:focus {
+      border-color: var(--blue);
+      background: #fff;
+      box-shadow: 0 0 0 4px rgba(0, 122, 255, .1)
+    }
+
+    .ios-select {
+      width: 100%;
+      background: var(--card2);
+      border: 1.5px solid transparent;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 15px;
+      font-family: inherit;
+      color: var(--t1);
+      outline: none;
+      appearance: none;
+      cursor: pointer
+    }
+
+    .dropdown-wrapper {
+      position: relative;
+      width: 100%;
+    }
+
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--card);
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+      z-index: 500;
+      max-height: 220px;
+      overflow-y: auto;
+      display: none;
+      margin-top: 6px;
+      border: 1px solid var(--sep);
+    }
+
+    .dropdown-item {
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 0.5px solid var(--sep);
+      cursor: pointer;
+      transition: background .15s;
+    }
+
+    .dropdown-item:last-child {
+      border-bottom: none;
+    }
+
+    .dropdown-item:active {
+      background: var(--card2);
+    }
+
+    .dropdown-del {
+      color: var(--t3);
+      background: none;
+      border: none;
+      padding: 6px;
+      margin: -6px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .15s;
+    }
+
+    .dropdown-del:active {
+      background: rgba(255, 69, 58, 0.1);
+      color: var(--red);
+    }
+
+    /* ── SEGMENTS ── */
+    .seg {
+      display: flex;
+      background: var(--card2);
+      border-radius: 10px;
+      padding: 2px;
+      gap: 2px
+    }
+
+    .seg-btn {
+      flex: 1;
+      padding: 7px;
+      border: none;
+      background: transparent;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      color: var(--t3);
+      cursor: pointer;
+      transition: all .2s
+    }
+
+    .seg-btn.on {
+      background: var(--card);
+      color: var(--t1);
+      box-shadow: 0 1px 6px rgba(0, 0, 0, .1)
+    }
+
+    /* ── TAGS ── */
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      border: 1.5px solid var(--sep);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .18s;
+      color: var(--t2);
+      background: transparent;
+      font-family: inherit
+    }
+
+    .tag.on {
+      border-color: var(--blue);
+      background: rgba(0, 122, 255, .08);
+      color: var(--blue)
+    }
+
+    /* ── BUTTONS ── */
+    .btn-primary {
+      width: 100%;
+      padding: 15px;
+      border-radius: 14px;
+      border: none;
+      background: var(--blue);
+      color: #fff;
+      font-size: 17px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all .15s;
+      margin-top: 4px
+    }
+
+    .btn-primary:active {
+      transform: scale(.98);
+      filter: brightness(.92)
+    }
+
+    .btn-secondary {
+      width: 100%;
+      padding: 13px;
+      border-radius: 14px;
+      border: none;
+      background: var(--card2);
+      color: var(--t1);
+      font-size: 15px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all .15s;
+      margin-top: 4px
+    }
+
+    .btn-secondary:active {
+      transform: scale(.98)
+    }
+
+    .btn-danger {
+      background: var(--red);
+      color: #fff
+    }
+
+    /* ── MODAL ── */
+    .modal-bg {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .45);
+      z-index: 500;
+      align-items: flex-end;
+      justify-content: center
+    }
+
+    .modal-bg.open {
+      display: flex;
+      animation: bgFade .2s ease
+    }
+
+    @keyframes bgFade {
+      from {
+        opacity: 0
+      }
+
+      to {
+        opacity: 1
+      }
+    }
+
+    .modal-sheet {
+      background: var(--card);
+      border-radius: 28px 28px 0 0;
+      width: 100%;
+      max-width: 480px;
+      padding: 20px 20px calc(28px + env(safe-area-inset-bottom));
+      max-height: 90vh;
+      overflow-y: auto;
+      animation: sheetUp .3s cubic-bezier(.34, 1.1, .64, 1)
+    }
+
+    @keyframes sheetUp {
+      from {
+        transform: translateY(100%)
+      }
+
+      to {
+        transform: translateY(0)
+      }
+    }
+
+    .modal-drag {
+      width: 40px;
+      height: 4px;
+      background: var(--sep);
+      border-radius: 2px;
+      margin: 0 auto 18px
+    }
+
+    .modal-title {
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 16px
+    }
+
+    /* ── PROGRESS RING ── */
+    .ring-wrap {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center
+    }
+
+    .ring-circle {
+      transform: rotate(-90deg);
+      transform-origin: 50% 50%
+    }
+
+    .ring-track {
+      transition: stroke-dashoffset .6s cubic-bezier(.4, 0, .2, 1)
+    }
+
+    .ring-center {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center
+    }
+
+    /* ── WATER WAVE ── */
+    .wave-wrap {
+      position: relative;
+      width: 190px;
+      height: 190px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: #E5E5EA;
+      border: 8px solid rgba(255, 255, 255, .8);
+      box-shadow: 0 4px 24px rgba(0, 122, 255, .15)
+    }
+
+    .wave-fill {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: linear-gradient(180deg, #5AC8FA, #007AFF);
+      transition: height .6s cubic-bezier(.4, 0, .2, 1)
+    }
+
+    .wave-text {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 2
+    }
+
+    /* ── BADGE ── */
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 20px;
+      letter-spacing: .2px
+    }
+
+    .badge-green {
+      background: rgba(48, 209, 88, .12);
+      color: #1a8a3a
+    }
+
+    .badge-orange {
+      background: rgba(255, 159, 10, .12);
+      color: #b86000
+    }
+
+    .badge-red {
+      background: rgba(255, 69, 58, .12);
+      color: #c0392b
+    }
+
+    .badge-blue {
+      background: rgba(0, 122, 255, .1);
+      color: #005bbf
+    }
+
+    .badge-purple {
+      background: rgba(191, 90, 242, .12);
+      color: #8b1fc8
+    }
+
+    .badge-emerald {
+      background: rgba(0, 200, 150, .12);
+      color: #007a5a
+    }
+
+    .badge-gray {
+      background: rgba(142, 142, 147, .12);
+      color: var(--t3)
+    }
+
+    /* ── STREAK CANVAS ── */
+    #streak-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      border-radius: 22px;
+      overflow: hidden
+    }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-16px);
+      background: #1C1C1E;
+      color: #fff;
+      padding: 11px 22px;
+      border-radius: 22px;
+      font-size: 14px;
+      font-weight: 600;
+      z-index: 999;
+      opacity: 0;
+      transition: all .28s cubic-bezier(.34, 1.1, .64, 1);
+      pointer-events: none;
+      white-space: nowrap;
+      letter-spacing: .1px
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0)
+    }
+
+    /* ── MILESTONE ── */
+    .milestone-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, .5);
+      backdrop-filter: blur(8px)
+    }
+
+    .milestone-card {
+      background: var(--card);
+      border-radius: 28px;
+      padding: 36px 28px 28px;
+      text-align: center;
+      max-width: 300px;
+      width: 88%;
+      position: relative;
+      overflow: hidden
+    }
+
+    .milestone-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(0, 122, 255, .04), rgba(191, 90, 242, .04));
+      border-radius: 28px
+    }
+
+    #milestone-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none
+    }
+
+    .milestone-emoji {
+      font-size: 56px;
+      margin-bottom: 12px;
+      display: block;
+      animation: popIn .4s cubic-bezier(.34, 1.56, .64, 1)
+    }
+
+    @keyframes popIn {
+      from {
+        transform: scale(0) rotate(-20deg)
+      }
+
+      to {
+        transform: scale(1) rotate(0)
+      }
+    }
+
+    .milestone-title {
+      font-size: 24px;
+      font-weight: 900;
+      margin-bottom: 6px;
+      letter-spacing: -.3px
+    }
+
+    .milestone-msg {
+      color: var(--t3);
+      font-size: 15px;
+      margin-bottom: 24px;
+      line-height: 1.5
+    }
+
+    /* ── MONEY CARD ── */
+    .money-hero {
+      border-radius: var(--rlg);
+      padding: 24px;
+      margin-bottom: 14px;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      transform-style: preserve-3d;
+      transition: transform .1s ease-out;
+      box-shadow: 0 8px 32px rgba(0, 200, 150, .25)
+    }
+
+    .money-bg {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, #00b894, #00C896, #00a878);
+      z-index: 0
+    }
+
+    .money-bg::after {
+      content: '';
+      position: absolute;
+      top: -40px;
+      right: -40px;
+      width: 160px;
+      height: 160px;
+      background: rgba(255, 255, 255, .08);
+      border-radius: 50%
+    }
+
+    .money-content {
+      position: relative;
+      z-index: 1;
+      color: #fff
+    }
+
+    .money-label {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .8px;
+      text-transform: uppercase;
+      opacity: .8
+    }
+
+    .money-amount {
+      font-family: 'DM Serif Display', serif;
+      font-size: 44px;
+      font-weight: 400;
+      letter-spacing: -1px;
+      line-height: 1.1;
+      margin: 4px 0
+    }
+
+    .money-sub {
+      font-size: 13px;
+      opacity: .75;
+      margin-top: 4px
+    }
+
+    /* ── SPENDING RING ── */
+    .spending-ring-section {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 16px
+    }
+
+    .spend-info {
+      flex: 1
+    }
+
+    .spend-title {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 4px
+    }
+
+    .spend-sub {
+      font-size: 13px;
+      color: var(--t3)
+    }
+
+    .spend-amount {
+      font-size: 28px;
+      font-weight: 800;
+      margin: 8px 0 2px
+    }
+
+    /* ── CATEGORY CHIPS ── */
+    .cat-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 14px
+    }
+
+    .cat-chip {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 10px 4px;
+      border-radius: 12px;
+      border: 1.5px solid var(--sep);
+      cursor: pointer;
+      transition: all .18s;
+      background: transparent;
+      font-family: inherit
+    }
+
+    .cat-chip.on {
+      border-color: var(--emerald);
+      background: rgba(0, 200, 150, .08)
+    }
+
+    .cat-chip-icon {
+      font-size: 20px
+    }
+
+    .cat-chip-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--t3)
+    }
+
+    .cat-chip.on .cat-chip-label {
+      color: var(--emerald)
+    }
+
+    /* ── TRANSACTION ITEM ── */
+    .txn-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 16px;
+      border-bottom: 0.5px solid var(--sep);
+      transition: background .15s
+    }
+
+    .txn-item:last-child {
+      border-bottom: none
+    }
+
+    .txn-item:active {
+      background: var(--card2)
+    }
+
+    .txn-icon-wrap {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0
+    }
+
+    .txn-body {
+      flex: 1;
+      min-width: 0
+    }
+
+    .txn-name {
+      font-size: 15px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis
+    }
+
+    .txn-meta {
+      font-size: 12px;
+      color: var(--t3);
+      margin-top: 1px
+    }
+
+    .txn-amount {
+      font-size: 16px;
+      font-weight: 700;
+      flex-shrink: 0
+    }
+
+    .txn-del {
+      background: none;
+      border: none;
+      color: var(--t3);
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 8px;
+      transition: color .15s
+    }
+
+    .txn-del:active {
+      color: var(--red)
+    }
+
+    /* ── WEEK BAR ── */
+    .week-bar {
+      display: flex;
+      gap: 6px;
+      align-items: flex-end;
+      height: 70px;
+      margin-bottom: 8px
+    }
+
+    .week-bar-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px
+    }
+
+    .week-bar-fill {
+      width: 100%;
+      border-radius: 5px 5px 0 0;
+      min-height: 4px;
+      transition: height .5s cubic-bezier(.4, 0, .2, 1)
+    }
+
+    .week-bar-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--t3)
+    }
+
+    /* ── HABIT DONE BURST ── */
+    @keyframes burstScale {
+      0% {
+        transform: scale(0);
+        opacity: 1
+      }
+
+      100% {
+        transform: scale(3);
+        opacity: 0
+      }
+    }
+
+    .burst-ring {
+      position: absolute;
+      inset: 0;
+      border: 3px solid var(--green);
+      border-radius: 50%;
+      animation: burstScale .5s ease-out forwards;
+      pointer-events: none
+    }
+
+    /* ── HEATMAP ── */
+    .heatmap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px
+    }
+
+    .hm-cell {
+      width: 13px;
+      height: 13px;
+      border-radius: 3px;
+      cursor: default;
+      transition: transform .15s
+    }
+
+    .hm-cell:active {
+      transform: scale(1.3)
+    }
+
+    /* ── HISTORY DAY ── */
+    .hist-day {
+      background: var(--card);
+      border-radius: var(--r);
+      overflow: hidden;
+      margin-bottom: 10px;
+      box-shadow: var(--shadow)
+    }
+
+    .hist-day-hdr {
+      background: var(--card2);
+      padding: 10px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 0.5px solid var(--sep)
+    }
+
+    .hist-day-date {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--t3);
+      text-transform: uppercase;
+      letter-spacing: .5px
+    }
+
+    .hist-stat-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0
+    }
+
+    .hist-stat {
+      padding: 12px 8px;
+      text-align: center;
+      border-right: 0.5px solid var(--sep)
+    }
+
+    .hist-stat:last-child {
+      border-right: none
+    }
+
+    .hist-stat-val {
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1
+    }
+
+    .hist-stat-label {
+      font-size: 10px;
+      color: var(--t3);
+      margin-top: 3px;
+      font-weight: 600
+    }
+
+    /* ── MEAL TYPE SECTION ── */
+    .meal-type-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 0.5px solid var(--sep);
+      cursor: pointer
+    }
+
+    .meal-type-left {
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .meal-type-icon {
+      font-size: 22px
+    }
+
+    .meal-type-name {
+      font-size: 15px;
+      font-weight: 700
+    }
+
+    .meal-type-count {
+      font-size: 12px;
+      color: var(--t3)
+    }
+
+    .meal-add-btn {
+      background: rgba(0, 122, 255, .08);
+      border: none;
+      color: var(--blue);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all .15s
+    }
+
+    .meal-add-btn:active {
+      background: rgba(0, 122, 255, .16)
+    }
+
+    /* ── PROJECT ── */
+    .proj-card {
+      background: var(--card);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      margin-bottom: 12px;
+      border-left: 4px solid var(--blue)
+    }
+
+    .proj-hdr {
+      padding: 14px 16px 10px
+    }
+
+    .proj-title {
+      font-size: 17px;
+      font-weight: 700
+    }
+
+    .proj-meta {
+      font-size: 12px;
+      color: var(--t3);
+      margin-top: 2px
+    }
+
+    .proj-bar-wrap {
+      height: 4px;
+      background: var(--card2);
+      margin: 8px 16px
+    }
+
+    .proj-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width .5s cubic-bezier(.4, 0, .2, 1)
+    }
+
+    .task-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-top: 0.5px solid var(--sep);
+      cursor: pointer;
+      transition: background .15s
+    }
+
+    .task-row:active {
+      background: var(--card2)
+    }
+
+    .task-label {
+      font-size: 14px;
+      font-weight: 500;
+      flex: 1;
+      transition: all .2s
+    }
+
+    .task-done .task-label {
+      text-decoration: line-through;
+      color: var(--t3)
+    }
+
+    /* ── SETTINGS ROWS ── */
+    .setting-icon-wrap {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0
+    }
+
+    .chevron {
+      color: var(--t3)
+    }
+
+    /* ── DUO WEEK DOTS ── */
+    .duo-dot {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 800;
+      flex: 1;
+      max-width: 36px
+    }
+
+    /* ── QUICK ADD WATER BTNS ── */
+    .water-btns {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px
+    }
+
+    .water-btn {
+      background: var(--card);
+      border: 1.5px solid var(--blue);
+      border-radius: 12px;
+      color: var(--blue);
+      font-weight: 700;
+      font-size: 14px;
+      padding: 11px 0;
+      cursor: pointer;
+      transition: all .15s;
+      font-family: inherit
+    }
+
+    .water-btn:active {
+      background: var(--blue);
+      color: #fff;
+      transform: scale(.96)
+    }
+
+    /* ── TODAY SUMMARY GRID ── */
+    .today-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px
+    }
+
+    .today-tile {
+      background: var(--card);
+      border-radius: var(--r);
+      padding: 14px;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      transition: transform .15s, box-shadow .15s;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start
+    }
+
+    .today-tile:active {
+      transform: scale(.97)
+    }
+
+    .tile-icon-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      margin-bottom: 10px
+    }
+
+    .tile-num {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -.5px;
+      line-height: 1
+    }
+
+    .tile-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--t3);
+      margin-top: 3px
+    }
+
+    /* ── STREAK HERO ── */
+    .streak-hero {
+      border-radius: var(--rlg);
+      padding: 22px;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 14px;
+      background: linear-gradient(135deg, #FF9F0A, #FF6B00)
+    }
+
+    .streak-num {
+      font-family: 'DM Serif Display', serif;
+      font-size: 64px;
+      color: #fff;
+      line-height: 1;
+      letter-spacing: -2px
+    }
+
+    .streak-unit {
+      font-size: 20px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, .75);
+      margin-left: 6px;
+      vertical-align: bottom;
+      line-height: 1.8
+    }
+
+    .streak-msg {
+      color: rgba(255, 255, 255, .85);
+      font-size: 14px;
+      font-weight: 500;
+      margin-top: 6px
+    }
+
+    /* ── INSIGHT CARD ── */
+    .insight-card {
+      background: linear-gradient(135deg, rgba(0, 122, 255, .06), rgba(191, 90, 242, .06));
+      border: 1px solid rgba(0, 122, 255, .12);
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px
+    }
+
+    .insight-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: rgba(0, 122, 255, .1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0
+    }
+
+    .insight-text {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--t2);
+      line-height: 1.5
+    }
+
+    /* ── SPEND CAT BAR ── */
+    .cat-bar-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px
+    }
+
+    .cat-bar-icon {
+      font-size: 16px;
+      width: 24px;
+      text-align: center
+    }
+
+    .cat-bar-wrap {
+      flex: 1;
+      height: 8px;
+      background: var(--card2);
+      border-radius: 4px;
+      overflow: hidden
+    }
+
+    .cat-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width .6s cubic-bezier(.4, 0, .2, 1)
+    }
+
+    .cat-bar-amt {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--t2);
+      min-width: 50px;
+      text-align: right
+    }
+
+    /* ── WEALTH TREND ── */
+    .balance-change {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 13px;
+      font-weight: 600
+    }
+
+    .change-up {
+      color: var(--green)
+    }
+
+    .change-down {
+      color: var(--red)
+    }
+
+    /* ── SCROLLBAR HIDE ── */
+    ::-webkit-scrollbar {
+      display: none
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ═══════════ AUTH SCREEN ═══════════ -->
+  <!-- 
+    Boss, this UI acts as the scaffolding. 
+    Once Supabase and Netlify are configured, you can hook the 
+    `loginWithGoogle()` function directly into supabase.auth.signInWithOAuth()
+  -->
+  <div id="auth-screen">
+    <div class="auth-card">
+      <div class="auth-logo-wrap">
+        <i data-lucide="book-heart" style="width:40px;height:40px"></i>
+      </div>
+      <h1 class="auth-title">Daily Journal</h1>
+      <p class="auth-subtitle">Track your habits, meals, finances, and projects in one seamless space.</p>
+      
+      <!-- Email / Password Form -->
+      <div style="text-align: left; margin-bottom: 16px;">
+        <input type="email" id="auth-email" class="ios-input" placeholder="Email address" style="margin-bottom: 12px;">
+        <input type="password" id="auth-password" class="ios-input" placeholder="Password">
+      </div>
+      <button class="btn-primary" id="btn-email-auth" onclick="loginWithEmail()" style="margin-top: 0; margin-bottom: 8px;">
+        Continue with Email
+      </button>
+
+      <div style="display: flex; align-items: center; margin: 20px 0; color: var(--t3); font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+        <div style="flex: 1; height: 1px; background: var(--sep);"></div>
+        <span style="padding: 0 12px;">or</span>
+        <div style="flex: 1; height: 1px; background: var(--sep);"></div>
+      </div>
+
+      <button class="btn-google" onclick="loginWithGoogle()">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+        </svg>
+        Continue with Google
+      </button>
+
+      <p class="auth-footer-text">
+        Ready for Supabase & Netlify deployment.<br>
+        By continuing, you agree to our Terms.
+      </p>
+    </div>
+  </div>
+
+  <!-- ═══════════ MAIN APP CONTAINER ═══════════ -->
+  <div id="app-container">
+    <!-- HEADER -->
+    <header class="header">
+      <div class="header-row">
+        <div>
+          <div class="header-date" id="hdr-date"></div>
+          <div class="header-title" id="hdr-title">Today</div>
+        </div>
+        <div class="header-actions">
+          <button class="icon-btn" onclick="goTab('history')" title="History">
+            <i data-lucide="calendar-days" style="width:20px;height:20px"></i>
+          </button>
+          <button class="icon-btn" onclick="goTab('settings')" title="Settings">
+            <i data-lucide="settings-2" style="width:20px;height:20px"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN -->
+    <div class="main-content">
+
+      <!-- ═══════════ TODAY ═══════════ -->
+      <div id="tab-today" class="tab-content active">
+        <!-- Streak Hero with 3D flame canvas -->
+        <div class="streak-hero" id="streak-hero-card">
+          <canvas id="streak-canvas"></canvas>
+          <div style="position:relative;z-index:2">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+              <i data-lucide="flame" style="width:18px;height:18px;color:rgba(255,255,255,.9)"></i>
+              <span
+                style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:rgba(255,255,255,.8)">Day
+                Streak</span>
+            </div>
+            <div><span class="streak-num" id="s-streak">0</span><span class="streak-unit">days</span></div>
+            <div class="streak-msg" id="s-streak-msg">Start your streak today!</div>
+          </div>
+        </div>
+
+        <!-- Insight Card -->
+        <div class="insight-card" id="insight-card" style="display:none">
+          <div class="insight-icon"><i data-lucide="lightbulb" style="width:20px;height:20px;color:var(--blue)"></i></div>
+          <div class="insight-text" id="insight-text"></div>
+        </div>
+
+        <!-- Summary Grid -->
+        <div class="today-grid">
+          <div class="today-tile" onclick="goTab('water')">
+            <div class="tile-icon-row">
+              <i data-lucide="droplets" style="width:22px;height:22px;color:var(--teal)"></i>
+              <span class="badge badge-blue" id="s-water-pct">0%</span>
+            </div>
+            <div class="tile-num" id="s-water">0ml</div>
+            <div class="tile-label">Hydration</div>
+          </div>
+          <div class="today-tile" onclick="goTab('habits')">
+            <div class="tile-icon-row">
+              <i data-lucide="check-circle-2" style="width:22px;height:22px;color:var(--green)"></i>
+              <span class="badge badge-green" id="s-habit-pct">0%</span>
+            </div>
+            <div class="tile-num" id="s-habits">0/0</div>
+            <div class="tile-label">Habits Done</div>
+          </div>
+          <div class="today-tile" onclick="goTab('money')">
+            <div class="tile-icon-row">
+              <i data-lucide="wallet" style="width:22px;height:22px;color:var(--emerald)"></i>
+              <span class="badge badge-emerald" id="s-spend-badge">₹0</span>
+            </div>
+            <div class="tile-num" id="s-balance" style="font-size:18px;color:var(--emerald)">₹0</div>
+            <div class="tile-label">Bank Balance</div>
+          </div>
+          <div class="today-tile" onclick="goTab('habits')">
+            <div class="tile-icon-row">
+              <i data-lucide="zap" style="width:22px;height:22px;color:var(--amber)"></i>
+              <span class="badge badge-orange" id="s-duo-badge">–</span>
+            </div>
+            <div class="tile-num" id="s-duo-flag" style="font-size:26px">🦜</div>
+            <div class="tile-label">Duolingo</div>
+          </div>
+        </div>
+
+        <!-- Quick Habits -->
+        <div class="section-label">Morning Routine</div>
+        <div class="card" id="today-habits-quick"></div>
+
+        <!-- Today Meals -->
+        <div class="section-label">Today's Meals</div>
+        <div class="card card-pad" id="today-meals-preview" style="display:flex;flex-direction:column;gap:8px">
+          <div style="color:var(--t3);font-size:14px;text-align:center;padding:8px 0">Nothing logged yet 🍽️</div>
+        </div>
+        <button class="btn-secondary" onclick="goTab('meals')" style="margin-bottom:14px">View All Meals</button>
+
+        <!-- Today Money Snapshot -->
+        <div class="section-label">Today's Spending</div>
+        <div class="card card-pad" id="today-money-snap">
+          <div style="color:var(--t3);font-size:14px;text-align:center;padding:8px 0">No transactions logged today 💸</div>
+        </div>
+      </div>
+
+      <!-- ═══════════ WATER ═══════════ -->
+      <div id="tab-water" class="tab-content">
+        <div class="card card-pad"
+          style="display:flex;flex-direction:column;align-items:center;gap:16px;margin-bottom:14px">
+          <div class="wave-wrap">
+            <div class="wave-fill" id="wave-fill" style="height:0%"></div>
+            <div class="wave-text">
+              <span style="font-family:'DM Serif Display',serif;font-size:34px;color:var(--t1);line-height:1"
+                id="w-amount">0</span>
+              <span style="font-size:13px;font-weight:600;color:var(--t3)">/ <span id="w-goal">2500</span> ml</span>
+              <span class="badge badge-blue" style="margin-top:6px" id="w-pct">0%</span>
+            </div>
+          </div>
+          <div class="water-btns" style="width:100%">
+            <button class="water-btn" onclick="addWater(150)">+150ml</button>
+            <button class="water-btn" onclick="addWater(250)">+250ml</button>
+            <button class="water-btn" onclick="addWater(350)">+350ml</button>
+            <button class="water-btn" onclick="addWater(500)">+500ml</button>
+          </div>
+          <button class="btn-secondary" onclick="openModal('m-water-custom')" style="width:100%;margin-top:0">
+            <i data-lucide="plus" style="width:16px;height:16px;vertical-align:middle;margin-right:4px"></i>Custom Amount
+          </button>
+        </div>
+
+        <div class="section-label">Today's Log</div>
+        <div class="card" id="water-log-list">
+          <div style="padding:20px;text-align:center;color:var(--t3);font-size:14px">No water logged yet. Stay hydrated!
+            💧</div>
+        </div>
+        <button class="btn-secondary" onclick="undoWater()" style="margin-bottom:14px">
+          <i data-lucide="undo-2" style="width:15px;height:15px;vertical-align:middle;margin-right:4px"></i>Undo Last
+        </button>
+
+        <div class="section-label">This Week</div>
+        <div class="card card-pad" id="water-weekly"></div>
+      </div>
+
+      <!-- ═══════════ HABITS ═══════════ -->
+      <div id="tab-habits" class="tab-content">
+        <!-- Duolingo Banner -->
+        <div
+          style="background:linear-gradient(135deg,#2563EB,#007AFF);border-radius:var(--rlg);padding:20px;margin-bottom:14px;position:relative;overflow:hidden">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;position:relative;z-index:1">
+            <div>
+              <div style="color:rgba(255,255,255,.85);font-size:13px;font-weight:600;margin-bottom:4px" id="duo-sub">Set
+                language in Settings</div>
+              <div style="color:#fff;font-size:22px;font-weight:800" id="duo-lang-name">Language</div>
+            </div>
+            <div style="text-align:center">
+              <i data-lucide="flame" style="width:28px;height:28px;color:#FFD60A"></i>
+              <div style="color:#fff;font-size:24px;font-weight:900;line-height:1" id="duo-streak-num">0</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;margin:14px 0 16px;position:relative;z-index:1" id="duo-week-dots"></div>
+          <button id="duo-btn" onclick="toggleDuo()"
+            style="width:100%;background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.3);border-radius:12px;color:#fff;font-size:15px;font-weight:700;padding:12px;cursor:pointer;font-family:inherit;transition:all .2s;position:relative;z-index:1">
+            Mark Today Done ✓
+          </button>
+        </div>
+
+        <div class="section-label">Morning Routine</div>
+        <div class="card" id="morning-list"></div>
+
+        <div class="section-label">Evening Routine</div>
+        <div class="card" id="evening-list"></div>
+
+        <div class="section-label">Custom Habits</div>
+        <div class="card" id="custom-habit-list">
+          <button onclick="openModal('m-add-habit')" class="card-row"
+            style="width:100%;border:none;background:none;text-align:left;cursor:pointer;color:var(--blue);font-family:inherit;font-size:15px;font-weight:600">
+            <i data-lucide="plus-circle" style="width:20px;height:20px;color:var(--blue)"></i> Add Custom Habit
+          </button>
+        </div>
+      </div>
+
+      <!-- ═══════════ MEALS ═══════════ -->
+      <div id="tab-meals" class="tab-content">
+        <!-- Quick Log Card -->
+        <div class="card card-pad" style="margin-bottom:14px">
+          <div style="font-size:18px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:8px">
+            <i data-lucide="utensils" style="width:20px;height:20px;color:var(--orange)"></i> Log a Meal
+          </div>
+          
+          <!-- Smart Dropdown Wrapper -->
+          <div class="dropdown-wrapper" id="meal-input-wrap">
+            <input class="ios-input" id="meal-name-input" placeholder="What did you eat? e.g. Dosa" style="margin-bottom:10px" onfocus="showMealMenu()" oninput="filterMealMenu()" autocomplete="off">
+            <div class="dropdown-menu" id="meal-dropdown-menu"></div>
+          </div>
+
+          <select class="ios-select" id="meal-type-sel" style="margin-bottom:10px">
+            <option value="breakfast">🌅 Breakfast</option>
+            <option value="lunch">☀️ Lunch</option>
+            <option value="dinner">🌙 Dinner</option>
+            <option value="snack">🍎 Snack</option>
+          </select>
+          <div class="seg" style="margin-bottom:12px" id="meal-loc-seg">
+            <button class="seg-btn on" onclick="setMealLoc('home',this)"><i data-lucide="home" style="width:14px;height:14px;vertical-align:middle;margin-right:4px"></i>Home</button>
+            <button class="seg-btn" onclick="setMealLoc('outside',this)"><i data-lucide="store" style="width:14px;height:14px;vertical-align:middle;margin-right:4px"></i>Outside</button>
+          </div>
+          <div id="meal-home-opts">
+            <div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">
+              Calorie Count</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+              <button class="tag on" id="cal-low" onclick="setCalorie('low',this)">🥗 Low Cal</button>
+              <button class="tag" id="cal-med" onclick="setCalorie('medium',this)">⚖️ Moderate</button>
+              <button class="tag" id="cal-high" onclick="setCalorie('high',this)">🍕 High Cal</button>
+            </div>
+            <!-- Smart Suggestion: Macro Tracking -->
+            <div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;margin-top:12px">
+              Macronutrients (Optional)</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+              <button class="tag" id="macro-protein" onclick="toggleMacro('protein',this)">🥩 High Protein</button>
+              <button class="tag" id="macro-carbs" onclick="toggleMacro('carbs',this)">🍞 High Carb</button>
+              <button class="tag" id="macro-fat" onclick="toggleMacro('fat',this)">🥑 High Fat</button>
+            </div>
+          </div>
+          <div id="meal-out-opts" style="display:none">
+            <div
+              style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">
+              Healthiness</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+              <button class="tag" id="health-good" onclick="setHealth('healthy',this)">✅ Healthy</button>
+              <button class="tag" id="health-ok" onclick="setHealth('okay',this)">🟡 Okay</button>
+              <button class="tag" id="health-bad" onclick="setHealth('unhealthy',this)">❌ Unhealthy</button>
+            </div>
+          </div>
+          <button class="btn-primary" onclick="logMeal()">
+            <i data-lucide="plus" style="width:18px;height:18px;vertical-align:middle;margin-right:4px"></i>Log Meal
+          </button>
+        </div>
+
+        <div id="meals-by-type"></div>
+      </div>
+
+      <!-- ═══════════ MONEY ═══════════ -->
+      <div id="tab-money" class="tab-content">
+        <!-- Balance Hero Card (3D tilt) -->
+        <div class="money-hero" id="money-hero" onclick="openModal('m-edit-balance')">
+          <div class="money-bg"></div>
+          <div class="money-content">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+              <i data-lucide="wallet" style="width:16px;height:16px;opacity:.85"></i>
+              <span class="money-label">Bank Balance</span>
+            </div>
+            <div class="money-amount" id="money-balance">₹0</div>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
+              <span class="money-sub">Today's spend: <strong id="money-today-spent-hero">₹0</strong></span>
+              <span id="money-trend" class="balance-change"></span>
+            </div>
+            <div style="font-size:11px;opacity:.6;margin-top:6px">Tap to edit balance</div>
+          </div>
+        </div>
+
+        <!-- Daily Spending Ring -->
+        <div class="card" style="margin-bottom:14px">
+          <div class="spending-ring-section">
+            <div class="ring-wrap" id="spend-ring-wrap">
+              <svg width="120" height="120">
+                <circle cx="60" cy="60" r="50" stroke="#F2F2F7" stroke-width="10" fill="none" />
+                <circle id="spend-ring-arc" cx="60" cy="60" r="50" stroke="#30D158" stroke-width="10" fill="none"
+                  stroke-dasharray="314.16" stroke-dashoffset="314.16" stroke-linecap="round"
+                  class="ring-circle ring-track" style="transform-origin:60px 60px" />
+              </svg>
+              <div class="ring-center">
+                <div style="font-size:20px;font-weight:900;line-height:1" id="spend-ring-pct">0%</div>
+                <div style="font-size:10px;color:var(--t3);font-weight:600">of limit</div>
+              </div>
+            </div>
+            <div class="spend-info">
+              <div class="spend-title">Daily Limit</div>
+              <div class="spend-sub">Budget for today</div>
+              <div class="spend-amount" id="spend-today-num">₹0</div>
+              <div style="font-size:13px;color:var(--t3)">Limit: <span id="spend-limit-display">₹500</span></div>
+              <button onclick="openModal('m-set-limit')"
+                style="margin-top:8px;background:none;border:none;color:var(--blue);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;padding:0">Edit
+                Limit</button>
+            </div>
+          </div>
+          <!-- Category Breakdown -->
+          <div style="padding:0 16px 16px" id="cat-breakdown"></div>
+        </div>
+
+        <!-- Log Transaction (Income & Expense) -->
+        <div class="section-label">Log Transaction</div>
+        <div class="card card-pad" style="margin-bottom:14px">
+          <div class="seg" style="margin-bottom:12px" id="txn-type-seg">
+            <button class="seg-btn on" onclick="setTxnType('expense', this)">📉 Expense</button>
+            <button class="seg-btn" onclick="setTxnType('income', this)">📈 Income</button>
+          </div>
+          
+          <input class="ios-input" id="expense-note" placeholder="What was it for?" style="margin-bottom:10px">
+          <input class="ios-input" id="expense-amount" type="number" placeholder="Amount (₹)" style="margin-bottom:12px">
+          
+          <div id="expense-cats-wrap">
+            <div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">
+              Category</div>
+            <div class="cat-grid" id="expense-cats"></div>
+          </div>
+          
+          <button class="btn-primary" id="txn-btn" onclick="logTransaction()" style="background:var(--red)">
+            <i data-lucide="minus-circle" style="width:18px;height:18px;vertical-align:middle;margin-right:4px"></i>Log
+            Expense
+          </button>
+        </div>
+
+        <!-- Today's Transactions -->
+        <div class="section-label">Today's Transactions</div>
+        <div class="card" id="txn-list">
+          <div style="padding:20px;text-align:center;color:var(--t3);font-size:14px">No transactions today 🎉</div>
+        </div>
+        <button class="btn-secondary" onclick="undoTransaction()" style="margin-bottom:14px">
+          <i data-lucide="undo-2" style="width:15px;height:15px;vertical-align:middle;margin-right:4px"></i>Undo Last
+          Transaction
+        </button>
+
+        <!-- Weekly Spend Chart -->
+        <div class="section-label">This Week</div>
+        <div class="card card-pad" id="money-weekly"></div>
+      </div>
+
+      <!-- ═══════════ PROJECTS ═══════════ -->
+      <div id="tab-projects" class="tab-content">
+        <button class="btn-primary" onclick="openModal('m-add-project')"
+          style="margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:8px">
+          <i data-lucide="folder-plus" style="width:20px;height:20px"></i> New Project
+        </button>
+        <div id="projects-list"></div>
+      </div>
+
+      <!-- ═══════════ HISTORY ═══════════ -->
+      <div id="tab-history" class="tab-content">
+        <div class="card card-pad" style="margin-bottom:14px">
+          <div style="font-size:15px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px">
+            <i data-lucide="activity" style="width:18px;height:18px;color:var(--blue)"></i> 35-Day Activity
+          </div>
+          <p style="font-size:12px;color:var(--t3);margin-bottom:10px">Darker = more done that day</p>
+          <div class="heatmap" id="heatmap"></div>
+        </div>
+        <div class="section-label">Past Entries</div>
+        <div id="history-list"></div>
+        <div id="history-empty" style="text-align:center;color:var(--t3);font-size:14px;padding:40px 20px">No history yet.
+          Start journaling today! 📖</div>
+      </div>
+
+      <!-- ═══════════ SETTINGS ═══════════ -->
+      <div id="tab-settings" class="tab-content">
+        <!-- Profile -->
+        <div class="card card-pad" style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+          <div
+            style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;font-weight:800;flex-shrink:0"
+            id="s-avatar">?</div>
+          <div style="flex:1">
+            <div style="font-size:20px;font-weight:800" id="s-name">Set Your Name</div>
+            <div style="font-size:13px;color:var(--t3)">Daily Journal Pro</div>
+          </div>
+          <button onclick="openModal('m-name')"
+            style="background:none;border:none;color:var(--blue);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Edit</button>
+        </div>
+
+        <!-- Water -->
+        <div class="section-label">Water</div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-row" onclick="openModal('m-water-goal')">
+            <div class="row-icon" style="background:rgba(50,173,230,.1)"><i data-lucide="droplets"
+                style="width:18px;height:18px;color:var(--teal)"></i></div>
+            <div class="row-body">
+              <div class="row-title">Daily Water Goal</div>
+            </div>
+            <div class="row-right"><span style="font-size:13px;font-weight:600;color:var(--t3)" id="s-water-goal-val">2500
+                ml</span><i data-lucide="chevron-right" style="width:16px;height:16px" class="chevron"></i></div>
+          </div>
+        </div>
+
+        <!-- Money -->
+        <div class="section-label">Money</div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-row" onclick="openModal('m-edit-balance')">
+            <div class="row-icon" style="background:rgba(0,200,150,.1)"><i data-lucide="landmark"
+                style="width:18px;height:18px;color:var(--emerald)"></i></div>
+            <div class="row-body">
+              <div class="row-title">Bank Balance</div>
+            </div>
+            <div class="row-right"><span style="font-size:13px;font-weight:600;color:var(--t3)"
+                id="s-bank-val">₹0</span><i data-lucide="chevron-right" style="width:16px;height:16px"
+                class="chevron"></i></div>
+          </div>
+          <div class="card-row" onclick="openModal('m-set-limit')">
+            <div class="row-icon" style="background:rgba(255,159,10,.1)"><i data-lucide="gauge"
+                style="width:18px;height:18px;color:var(--orange)"></i></div>
+            <div class="row-body">
+              <div class="row-title">Daily Spending Limit</div>
+            </div>
+            <div class="row-right"><span style="font-size:13px;font-weight:600;color:var(--t3)"
+                id="s-limit-val">₹500</span><i data-lucide="chevron-right" style="width:16px;height:16px"
+                class="chevron"></i></div>
+          </div>
+          <div class="card-row">
+            <div class="row-icon" style="background:rgba(94,92,230,.1)"><i data-lucide="trending-up"
+                style="width:18px;height:18px;color:var(--indigo)"></i></div>
+            <div class="row-body">
+              <div class="row-title">This Month's Spend</div>
+              <div class="row-sub" id="s-monthly-spend">₹0 this month</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Language -->
+        <div class="section-label">Language Learning</div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-row" onclick="openModal('m-lang')">
+            <div class="row-icon" style="background:rgba(0,122,255,.1)"><i data-lucide="globe-2"
+                style="width:18px;height:18px;color:var(--blue)"></i></div>
+            <div class="row-body">
+              <div class="row-title">Learning Language</div>
+              <div class="row-sub" id="s-lang-sub">Not set</div>
+            </div>
+            <div class="row-right"><i data-lucide="chevron-right" style="width:16px;height:16px" class="chevron"></i>
+            </div>
+          </div>
+          <div class="card-row">
+            <div class="row-icon" style="background:rgba(255,159,10,.1)"><i data-lucide="target"
+                style="width:18px;height:18px;color:var(--orange)"></i></div>
+            <div class="row-body">
+              <div class="row-title">Daily Goal</div>
+              <div class="row-sub"><span id="s-duo-goal">15</span> min/day</div>
+            </div>
+            <input type="range" min="5" max="60" step="5" value="15" style="width:100px" id="duo-goal-range"
+              oninput="S.duolingo.goalMins=+this.value;document.getElementById('s-duo-goal').textContent=this.value;save()">
+          </div>
+        </div>
+
+        <!-- Custom Habits -->
+        <div class="section-label">Custom Habits</div>
+        <div class="card" style="margin-bottom:14px">
+          <div id="settings-habit-list"></div>
+          <button onclick="openModal('m-add-habit')" class="card-row"
+            style="width:100%;border:none;background:none;text-align:left;cursor:pointer;color:var(--blue);font-family:inherit;font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px">
+            <i data-lucide="plus-circle" style="width:18px;height:18px"></i> Add Custom Habit
+          </button>
+        </div>
+
+        <!-- Account & Data -->
+        <div class="section-label">Account & Data</div>
+        <div class="card" style="margin-bottom:20px">
+          <button onclick="logout()"
+            style="width:100%;padding:15px;border:none;background:none;color:var(--t2);font-size:16px;font-weight:600;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;border-bottom:0.5px solid var(--sep);">
+            <i data-lucide="log-out" style="width:18px;height:18px"></i> Log Out
+          </button>
+          <button onclick="resetAll()"
+            style="width:100%;padding:15px;border:none;background:none;color:var(--red);font-size:16px;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+            <i data-lucide="trash-2" style="width:18px;height:18px"></i> Reset All Data
+          </button>
+        </div>
+        <div style="text-align:center;color:var(--t3);font-size:12px;padding-bottom:8px">Daily Journal v3.0 • Made with ❤️
+        </div>
+      </div>
+
+    </div><!-- end main-content -->
+
+    <!-- BOTTOM NAV -->
+    <nav class="nav-bar">
+      <div class="nav-inner">
+        <button class="nav-item active" id="nav-today" onclick="goTab('today')">
+          <i data-lucide="home" style="width:22px;height:22px"></i>
+          <span class="nav-label">Today</span>
+        </button>
+        <button class="nav-item" id="nav-water" onclick="goTab('water')">
+          <i data-lucide="droplets" style="width:22px;height:22px"></i>
+          <span class="nav-label">Water</span>
+        </button>
+        <button class="nav-item" id="nav-habits" onclick="goTab('habits')">
+          <i data-lucide="check-square" style="width:22px;height:22px"></i>
+          <span class="nav-label">Habits</span>
+        </button>
+        <button class="nav-item" id="nav-meals" onclick="goTab('meals')">
+          <i data-lucide="utensils" style="width:22px;height:22px"></i>
+          <span class="nav-label">Meals</span>
+        </button>
+        <button class="nav-item" id="nav-money" onclick="goTab('money')">
+          <i data-lucide="wallet" style="width:22px;height:22px"></i>
+          <span class="nav-label">Money</span>
+        </button>
+        <button class="nav-item" id="nav-projects" onclick="goTab('projects')">
+          <i data-lucide="folder-open" style="width:22px;height:22px"></i>
+          <span class="nav-label">Projects</span>
+        </button>
+      </div>
+    </nav>
+  </div> <!-- end app-container -->
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ═══════ MODALS ═══════ -->
+
+  <!-- Water Custom -->
+  <div class="modal-bg" id="m-water-custom">
+    <div class="modal-sheet">
+      <div class="modal-drag"></div>
+      <div class="modal-title">Custom Water Amount</div>
+      <input class="ios-input" id="water-custom-in" type="number" placeholder="Amount in ml" style="margin-bottom:10px">
+      <button class="btn-primary" onclick="addWaterCustom()">Add Water 💧</button>
+      <button class="btn-secondary" onclick="closeModal('m-water-custom')">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Water Goal -->
+  <div class="modal-bg" id="m-water-goal">
+    <div class="modal-sheet">
+      <div class="modal-drag"></div>
+      <div class="modal-title">Daily Water Goal</div>
+      <input class="ios-input" id="water-goal-in" type="number" placeholder="ml e.g. 2500" style="margin-bottom:10px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+        <button class="tag" onclick="document.getElementById('water-goal-in').value=1500">1500ml</button>
+        <button class="tag" onclick="document.getElementById('water-goal-in').value=2000">2000ml</button>
+        <button class="tag" onclick="document.getElementById('water-goal-in').value=2500">2500ml</button>
+        <button class="tag" onclick="document.getElementById('water-goal-in').value=3000">3000ml</button>
+      </div>
+      <button class="btn-primary" onclick="saveWaterGoal()">Save</button>
+      <button class="btn-secondary" onclick="closeModal('m-water-goal')">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Edit Balance -->
+  <div class="modal-bg" id="m-edit-balance">
+    <div class="modal-sheet">
+      <div class="modal-drag"></div>
+      <div class="modal-title">Bank Balance</div>
+      <p style="color:var(--t3);font-size:14px;margin-bottom:14px">Set your current total bank balance. This will
+        decrease as you log expenses.</p>
+      <input class="ios-input" id="balance-in" type="number" placeholder="e.g. 45000" style="margin-bottom:10px">
+      <button class="btn-primary" style="background:var(--emerald)" onclick="saveBalance()">
+        <i data-lucide="landmark" style="width:18px;height:18px;vertical-align:middle;margin-right:4px"></i>Save Balance
+      </button>
+      <button class="btn-secondary" onclick="closeModal('m-edit-balance')">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Set Spending Limit -->
+  <div class="modal-bg" id="m-set-limit">
+    <div class="modal-sheet">
+      <div class="modal-drag"></div>
+      <div class="modal-title">Daily Spending Limit</div>
+      <p style="color:var(--t3);font-size:14px;margin-bottom:14px">The ring will fill as you spend. You'll get an alert
+        when you're close.</p>
+      <input class="ios-input" id="limit-in" type="number" placeholder="e.g. 500" style="margin-bottom:10px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+        <button class="tag" onclick="document.getElementById('limit-in').value=200">₹200</button>
+        <button class="tag" onclick="document.getElementById('limit-in').value=500">₹500</button>
+        <button class="tag" onclick="document.getElementById('limit-in').value=1000">₹1000</button>
+        <button class="tag" onclick="document.getElementById('limit-in').value=2000">₹2000</button>
+      </div>
+      <button class="btn-primary" style="background:var(--emerald)" onclick="saveLimit()">Save Limit</button>
+      <button class="btn-secondary" onclick="closeModal('m-set-limit')">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Language -->
+  <div class="modal-bg" id="m-lang">
+    <div class="modal-sheet">
+      <div class="modal-drag"></div>
+      <div class="modal-title">Learning Language</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+        <button class="tag" onclick="pickLang('Tamil','🇮🇳')">🇮🇳 Tamil</button>
+        <button class="tag" onclick="pickLang('Spanish','🇪🇸')">🇪🇸 Spanish</button>
+        <button class="tag" onclick="pickLang('French','🇫🇷')">🇫🇷 French</button>
+        <button class="tag" onclick="pickLang('Japanese','🇯🇵')">🇯🇵 Japanese</button>
+        <button class="tag" onclick="pickLang('Korean','🇰🇷')">🇰🇷 Korean</button>
+        <button class="tag" onclick="pickLang('German','🇩🇪')">🇩🇪 German</button>
+        <button class="tag" onclick="pickLang('Hindi','🇮🇳')">🇮🇳 Hindi</button>
+        <button class="tag" onclick="pickLang('Mandarin','🇨🇳')">🇨🇳 Mandarin</button>
+      </div>
+      <p
+        style="font-size:12px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">
+        Or custom</p>
+      <input class="ios-input" id="lang-name-in" placeholder="Language name..." style="margin-bottom:8px">
+      <input class="ios-input" id="lang-flag-in" placeholder="Flag emoji e.g. 🇰🇷" style="margin-bottom:10px">
+      <button class="btn-primary" onclick="saveCustomLang()">Set Language</button>
+      <button class="btn-secondary" onclick="closeModal('m-lang')">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Add Custom Habit -->
+  <div class="modal-bg" id="m-add-habit">
+    <div class="modal-sheet">
+      <div class="modal-drag"></div>
+      <div class="modal-title">New Habit</div>
+      <input class="ios-input" id="habit-name-in" placeholder="Habit name..." style="margin-bottom:10px">
+      <input class="ios-input" id="habit-icon-in" placeholder="Emoji icon e.g. 🏋️" style="margin-bottom:12px">
+      <div
+        style="font-size:12px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">
+        Category</div>
+      <div style="display:flex;gap:8px;margin-bottom:14px" id="habit-cat-sel">
+        <button class="tag on" onclick="pickHabitCat('morning',this)">🌅 Morning</button>
+        <button class="tag" onclick="pickHabitCat('evening',this)">🌙 Evening</button>
+        <button class="tag" onclick="pickHabitCat('anytime',this)">⭐ Any</button>
+      </div>
+      <button class="btn-primary" onclick="saveCustomHabit()">Add Habit</button>
+      <button class="btn-secondary" onclick="closeModal('m-add-habit')">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Add Project -->
+  <div class="modal-bg" id="m-add-project">
+    <div class="modal-sheet">
+      <div class="modal-drag"></div>
+      <div class="modal-title" id="proj-modal-title">New Project</div>
+      <input class="ios-input" id="proj-name-in" placeholder="Project name..." style="margin-bottom:10px">
+      <div
+        style="font-size:12px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">
+        Color</div>
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap" id="proj-color-sel">
+        <button class="tag on" data-color="blue" onclick="pickProjColor('blue',this)">🔵 Blue</button>
+        <button class="tag" data-color="green" onclick="pickProjColor('green',this)">🟢 Green</button>
+        <button class="tag" data-color="orange" onclick="pickProjColor('orange',this)">🟠 Orange</button>
+        <button class="tag" data-color="purple" onclick="pickProjColor('purple',this)">🟣 Purple</button>
+        <button class="tag" data-color="red" onclick="pickProjColor('red',this)">🔴 Red</button>
+      </div>
+      <div
+        style="font-size:12px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">
+        Tasks</div>
+      <div id="task-inputs-wrap">
+        <input class="ios-input task-inp" placeholder="Task 1..." style="margin-bottom:6px">
+      </div>
+      <button onclick="addTaskInput()" class="btn-secondary"
+        style="margin-bottom:4px;display:flex;align-items:center;justify-content:center;gap:6px">
+        <i data-lucide="plus" style="width:16px;height:16px"></i> Add Task
+      </button>
+      <button class="btn-primary" onclick="saveProject()">Save Project</button>
+      <button class="btn-secondary" onclick="closeModal('m-add-project')">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Name Modal -->
+  <div class="modal-bg" id="m-name">
+    <div class="modal-sheet">
+      <div class="modal-drag"></div>
+      <div class="modal-title">Your Name</div>
+      <input class="ios-input" id="name-in" placeholder="Enter your name..." style="margin-bottom:10px">
+      <button class="btn-primary" onclick="saveName()">Save</button>
+      <button class="btn-secondary" onclick="closeModal('m-name')">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Milestone -->
+  <div id="milestone-bg" style="display:none" class="milestone-bg" onclick="closeMilestone()">
+    <div class="milestone-card" onclick="event.stopPropagation()">
+      <canvas id="milestone-canvas"></canvas>
+      <div style="position:relative;z-index:2">
+        <span class="milestone-emoji" id="ms-emoji">🏆</span>
+        <div class="milestone-title" id="ms-title">Achievement!</div>
+        <div class="milestone-msg" id="ms-msg">Keep it up!</div>
+        <button class="btn-primary" id="ms-btn" onclick="closeMilestone()">Awesome! 🎉</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!--              JAVASCRIPT               -->
+  <!-- ═══════════════════════════════════════ -->
+  <script>
+    // ─── CONSTANTS ───────────────────────────
+    const TODAY = new Date().toISOString().split('T')[0];
+    const RUPEE = '₹';
+
+    const MORNING_HABITS = [
+      { id: 'bath', icon: 'shower-head', label: 'Bath / Shower' },
+      { id: 'brush', icon: 'sparkles', label: 'Brush Teeth' },
+      { id: 'bathroom', icon: 'wind', label: 'Bathroom Visit' },
+      { id: 'water_am', icon: 'droplets', label: 'Morning Water' },
+    ];
+    const EVENING_HABITS = [
+      { id: 'brush_pm', icon: 'moon', label: 'Night Brush' },
+      { id: 'wind_down', icon: 'sunset', label: 'Wind Down' },
+      { id: 'reflect', icon: 'book-open', label: 'Reflect on Day' },
+    ];
+
+    const MEAL_TYPES = [
+      { key: 'breakfast', icon: '🌅', label: 'Breakfast' },
+      { key: 'lunch', icon: '☀️', label: 'Lunch' },
+      { key: 'dinner', icon: '🌙', label: 'Dinner' },
+      { key: 'snack', icon: '🍎', label: 'Snack' },
+    ];
+
+    const EXP_CATS = [
+      { id: 'food', icon: '🍔', label: 'Food' },
+      { id: 'transport', icon: '🚗', label: 'Transport' },
+      { id: 'shopping', icon: '🛍️', label: 'Shopping' },
+      { id: 'health', icon: '💊', label: 'Health' },
+      { id: 'bills', icon: '📄', label: 'Bills' },
+      { id: 'entertainment', icon: '🎬', label: 'Fun' },
+      { id: 'education', icon: '📚', label: 'Education' },
+      { id: 'other', icon: '📦', label: 'Other' },
+    ];
+
+    const COLOR_MAP = { blue: '#007AFF', green: '#30D158', orange: '#FF9F0A', purple: '#BF5AF2', red: '#FF453A' };
+
+    // ─── STATE ───────────────────────────────
+    let S = JSON.parse(localStorage.getItem('dj_s') || 'null') || {
+      name: '', waterGoal: 2500,
+      bankBalance: 0, dailyLimit: 500,
+      duolingo: { lang: '', flag: '🌐', streak: 0, bestStreak: 0, goalMins: 15, lastDone: '' },
+      customHabits: [],
+      streak: 0,
+      projects: {}, // GLOBAL PROJECTS
+      savedMeals: ['Idli', 'Dosa', 'Chapathi', 'Rice', 'Coffee', 'Tea'] // SAVED MEALS
+    };
+    S.customHabits = S.customHabits || [];
+    S.duolingo = S.duolingo || { lang: '', flag: '🌐', streak: 0, bestStreak: 0, goalMins: 15, lastDone: '' };
+    S.waterGoal = S.waterGoal || 2500;
+    S.dailyLimit = S.dailyLimit || 500;
+    S.streak = S.streak || 0;
+    S.projects = S.projects || {};
+    S.savedMeals = S.savedMeals || ['Idli', 'Dosa', 'Chapathi', 'Rice', 'Coffee', 'Tea'];
+    
+    let D = JSON.parse(localStorage.getItem('dj_d') || '{}');
+
+    // Meal UI state
+    let mealLoc = 'home', mealCalorie = 'low', mealHealth = 'okay';
+    let mealMacros = []; // For storing High Protein/Carb/Fat tags
+    // Expense UI state
+    let expCat = 'food';
+    let txnType = 'expense';
+    // Habit UI state
+    let habitCat = 'morning';
+    // Project UI state
+    let projColor = 'blue', editProjId = null;
+
+    function getDay(d = TODAY) {
+      if (!D[d]) D[d] = { water: 0, waterLog: [], habits: {}, duoDone: false, meals: [], expenses: [] };
+      return D[d];
+    }
+
+    function save() {
+      localStorage.setItem('dj_s', JSON.stringify(S));
+      localStorage.setItem('dj_d', JSON.stringify(D));
+    }
+
+    // ─── AUTHENTICATION LOGIC ──────────────────
+    function checkAuthStatus() {
+      const isAuth = localStorage.getItem('dj_auth_token') === 'true';
+      if (isAuth) {
+        document.getElementById('auth-screen').style.display = 'none';
+        const app = document.getElementById('app-container');
+        app.style.display = 'block';
+        
+        // Wait a frame to let display:block apply, then transition opacity and init canvas
+        requestAnimationFrame(() => {
+          app.style.opacity = '1';
+          initAppContent();
+        });
+      } else {
+        document.getElementById('auth-screen').style.display = 'flex';
+        document.getElementById('app-container').style.display = 'none';
+        lucide.createIcons(); // ensure auth screen icons are loaded
+      }
+    }
+
+    function loginWithEmail() {
+      const email = document.getElementById('auth-email').value.trim();
+      const pwd = document.getElementById('auth-password').value;
+      if (!email || !pwd) {
+        toast('Please enter both email and password!');
+        return;
+      }
+
+      const btn = document.getElementById('btn-email-auth');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader-2" style="animation: spin 1s linear infinite; vertical-align: middle; margin-right: 8px;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Connecting...`;
+      
+      setTimeout(() => {
+        localStorage.setItem('dj_auth_token', 'true'); // Simulate saving auth state
+        toast('Logged in successfully!');
+        
+        document.getElementById('auth-screen').style.opacity = '0';
+        setTimeout(() => {
+          checkAuthStatus();
+          btn.innerHTML = originalText;
+          document.getElementById('auth-password').value = '';
+        }, 400); // Wait for fade out
+      }, 800);
+    }
+
+    function loginWithGoogle() {
+      // Simulate authentication process (To be replaced with Supabase Auth)
+      // supabase.auth.signInWithOAuth({ provider: 'google' })
+      const btn = document.querySelector('.btn-google');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader-2" style="animation: spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Connecting...`;
+      
+      setTimeout(() => {
+        localStorage.setItem('dj_auth_token', 'true'); // Simulate saving auth state
+        toast('Logged in successfully!');
+        
+        document.getElementById('auth-screen').style.opacity = '0';
+        setTimeout(() => {
+          checkAuthStatus();
+        }, 400); // Wait for fade out
+      }, 800);
+    }
+
+    function logout() {
+      if (!confirm('Are you sure you want to log out?')) return;
+      localStorage.removeItem('dj_auth_token');
+      // supabase.auth.signOut()
+      
+      const app = document.getElementById('app-container');
+      app.style.opacity = '0';
+      
+      setTimeout(() => {
+        if (streakRenderer) streakRenderer.dispose();
+        if (msRenderer) msRenderer.dispose();
+        location.reload(); // Hard reload to clear app state and show login
+      }, 400);
+    }
+
+    // Add a spin keyframe for the loader
+    const style = document.createElement('style');
+    style.innerHTML = `@keyframes spin { 100% { transform: rotate(360deg); } }`;
+    document.head.appendChild(style);
+
+    // ─── THREE.JS 3D ELEMENTS ─────────────────
+    let streakRenderer, streakScene, streakCamera, flameMesh, flameParticles;
+    let msRenderer, msScene, msCamera, msTrophy;
+
+    function initStreakFlame() {
+      const canvas = document.getElementById('streak-canvas');
+      const card = document.getElementById('streak-hero-card');
+      const W = card.offsetWidth, H = card.offsetHeight;
+      canvas.width = W; canvas.height = H;
+
+      streakScene = new THREE.Scene();
+      streakCamera = new THREE.PerspectiveCamera(50, W / H, 0.1, 100);
+      streakCamera.position.set(0, 0, 4);
+
+      streakRenderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+      streakRenderer.setSize(W, H);
+      streakRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      streakRenderer.setClearColor(0x000000, 0);
+
+      // Flame core using cone
+      const flameGeo = new THREE.ConeGeometry(0.35, 1.2, 8, 1, true);
+      const flameMat = new THREE.MeshBasicMaterial({
+        color: 0xFFD60A, wireframe: false, transparent: true, opacity: 0.18,
+        side: THREE.DoubleSide
+      });
+      flameMesh = new THREE.Mesh(flameGeo, flameMat);
+      flameMesh.position.set(2.2, -0.3, 0.5);
+      streakScene.add(flameMesh);
+
+      // Flame particles using points
+      const pCount = 80;
+      const pGeo = new THREE.BufferGeometry();
+      const pPos = new Float32Array(pCount * 3);
+      for (let i = 0; i < pCount; i++) {
+        pPos[i * 3] = (Math.random() - 0.5) * 1.2 + 2.2;
+        pPos[i * 3 + 1] = Math.random() * 2.0 - 0.8;
+        pPos[i * 3 + 2] = (Math.random() - 0.5) * 0.6;
+      }
+      pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+      const pMat = new THREE.PointsMaterial({ color: 0xFF9F0A, size: 0.04, transparent: true, opacity: 0.35 });
+      flameParticles = new THREE.Points(pGeo, pMat);
+      streakScene.add(flameParticles);
+
+      // Soft ambient light effect via small spheres
+      const glowGeo = new THREE.SphereGeometry(0.15, 8, 8);
+      const glowMat = new THREE.MeshBasicMaterial({ color: 0xFF6B00, transparent: true, opacity: 0.12 });
+      const glow = new THREE.Mesh(glowGeo, glowMat);
+      glow.position.set(2.2, 0.3, 0.5);
+      streakScene.add(glow);
+
+      animateFlame();
+    }
+
+    function animateFlame() {
+      requestAnimationFrame(animateFlame);
+      const t = Date.now() * 0.001;
+      if (flameMesh) {
+        flameMesh.rotation.y = t * 0.8;
+        flameMesh.scale.y = 1 + Math.sin(t * 2.5) * 0.08;
+        flameMesh.scale.x = 1 + Math.sin(t * 1.8) * 0.05;
+        flameMesh.material.opacity = 0.15 + Math.sin(t * 3) * 0.05;
+      }
+      if (flameParticles) {
+        const pos = flameParticles.geometry.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+          pos.setY(i, pos.getY(i) + 0.008);
+          if (pos.getY(i) > 1.2) pos.setY(i, -0.8);
+          pos.setX(i, pos.getX(i) + Math.sin(t + i) * 0.002);
+        }
+        pos.needsUpdate = true;
+        flameParticles.material.opacity = 0.3 + Math.sin(t * 2) * 0.1;
+      }
+      if (streakRenderer) streakRenderer.render(streakScene, streakCamera);
+    }
+
+    function initMilestoneCanvas() {
+      const canvas = document.getElementById('milestone-canvas');
+      const card = canvas.parentElement;
+      const W = card.offsetWidth, H = card.offsetHeight;
+      canvas.width = W; canvas.height = H;
+
+      msScene = new THREE.Scene();
+      msCamera = new THREE.PerspectiveCamera(50, W / H, 0.1, 100);
+      msCamera.position.z = 4;
+
+      msRenderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+      msRenderer.setSize(W, H);
+      msRenderer.setClearColor(0x000000, 0);
+
+      // Rotating star/trophy shape using octahedron
+      const geo = new THREE.OctahedronGeometry(0.6, 0);
+      const mat = new THREE.MeshBasicMaterial({ color: 0xFFD60A, wireframe: true, transparent: true, opacity: 0.2 });
+      msTrophy = new THREE.Mesh(geo, mat);
+      msTrophy.position.set(1.8, -1.5, 0);
+      msScene.add(msTrophy);
+
+      // Sparkle particles around it
+      const sGeo = new THREE.BufferGeometry();
+      const sPos = new Float32Array(60 * 3);
+      for (let i = 0; i < 60; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const r = 0.8 + Math.random() * 1.2;
+        sPos[i * 3] = Math.cos(angle) * r + 1.8;
+        sPos[i * 3 + 1] = Math.sin(angle) * r - 1.5;
+        sPos[i * 3 + 2] = (Math.random() - 0.5) * 0.5;
+      }
+      sGeo.setAttribute('position', new THREE.BufferAttribute(sPos, 3));
+      const sMat = new THREE.PointsMaterial({ color: 0xFFD60A, size: 0.06, transparent: true, opacity: 0.4 });
+      msScene.add(new THREE.Points(sGeo, sMat));
+
+      animateMS();
+    }
+
+    function animateMS() {
+      if (!document.getElementById('milestone-bg').style.display || document.getElementById('milestone-bg').style.display === 'none') return;
+      requestAnimationFrame(animateMS);
+      const t = Date.now() * 0.001;
+      if (msTrophy) { msTrophy.rotation.x = t; msTrophy.rotation.y = t * 1.3; }
+      if (msRenderer) msRenderer.render(msScene, msCamera);
+    }
+
+    // 3D tilt on money hero card
+    function init3DTilt() {
+      const card = document.getElementById('money-hero');
+      if (!card) return;
+      card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+        const dx = (e.clientX - cx) / (rect.width / 2);
+        const dy = (e.clientY - cy) / (rect.height / 2);
+        card.style.transform = `perspective(600px) rotateY(${dx * 8}deg) rotateX(${-dy * 5}deg) scale(1.02)`;
+      });
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = 'perspective(600px) rotateY(0) rotateX(0) scale(1)';
+      });
+      // Touch tilt
+      card.addEventListener('touchmove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const t = e.touches[0];
+        const dx = (t.clientX - rect.left - rect.width / 2) / (rect.width / 2);
+        const dy = (t.clientY - rect.top - rect.height / 2) / (rect.height / 2);
+        card.style.transform = `perspective(600px) rotateY(${dx * 6}deg) rotateX(${-dy * 4}deg) scale(1.01)`;
+      }, { passive: true });
+      card.addEventListener('touchend', () => {
+        card.style.transition = 'transform .4s ease';
+        card.style.transform = 'perspective(600px) rotateY(0) rotateX(0) scale(1)';
+        setTimeout(() => card.style.transition = 'transform .1s ease-out', 400);
+      });
+    }
+
+    // ─── TAB NAVIGATION ───────────────────────
+    const TAB_TITLES = { today: 'Today', water: 'Water Tracker', habits: 'Habits', meals: 'Meals', money: 'Money', projects: 'Projects', history: 'History', settings: 'Settings' };
+    const NAV_TABS = ['today', 'water', 'habits', 'meals', 'money', 'projects'];
+
+    function goTab(id) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.getElementById('tab-' + id).classList.add('active');
+      document.getElementById('hdr-title').textContent = TAB_TITLES[id] || id;
+      document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+      const nb = document.getElementById('nav-' + id);
+      if (nb) nb.classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (navigator.vibrate) navigator.vibrate(8);
+      lucide.createIcons();
+      // Render on demand
+      const renders = { today: renderToday, water: renderWater, habits: renderHabits, meals: renderMeals, money: renderMoney, projects: renderProjects, history: renderHistory, settings: renderSettings };
+      if (renders[id]) renders[id]();
+    }
+
+    // ─── WATER ────────────────────────────────
+    function addWater(ml) {
+      const day = getDay();
+      day.water += ml;
+      day.waterLog.push({ ml, time: now12() });
+      save(); renderWater(); renderToday();
+      toast(`+${ml}ml 💧`);
+      if (day.water >= S.waterGoal) showMilestone('💧', 'Hydration Goal Met!', `You drank ${S.waterGoal}ml today! Incredible!`);
+    }
+    function addWaterCustom() {
+      const v = parseInt(document.getElementById('water-custom-in').value);
+      if (v > 0) { addWater(v); closeModal('m-water-custom'); document.getElementById('water-custom-in').value = ''; }
+    }
+    function undoWater() {
+      const day = getDay();
+      if (!day.waterLog.length) return;
+      const last = day.waterLog.pop();
+      day.water = Math.max(0, day.water - last.ml);
+      save(); renderWater(); renderToday(); toast('Undone ↩️');
+    }
+    function saveWaterGoal() {
+      const v = parseInt(document.getElementById('water-goal-in').value);
+      if (v >= 200 && v <= 8000) { S.waterGoal = v; save(); renderWater(); renderSettings(); closeModal('m-water-goal'); toast('Water goal updated!'); }
+    }
+
+    function renderWater() {
+      const day = getDay();
+      const pct = Math.min(Math.round((day.water / S.waterGoal) * 100), 100);
+      document.getElementById('wave-fill').style.height = pct + '%';
+      document.getElementById('w-amount').textContent = day.water.toLocaleString();
+      document.getElementById('w-goal').textContent = S.waterGoal.toLocaleString();
+      document.getElementById('w-pct').textContent = pct + '%';
+      document.getElementById('w-pct').className = 'badge ' + (pct >= 100 ? 'badge-green' : pct >= 60 ? 'badge-blue' : 'badge-gray');
+
+      const list = document.getElementById('water-log-list');
+      if (!day.waterLog.length) {
+        list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--t3);font-size:14px">No water logged yet. Stay hydrated! 💧</div>';
+      } else {
+        list.innerHTML = [...day.waterLog].reverse().map(e =>
+          `<div class="card-row" style="cursor:default">
+        <div class="row-icon" style="background:rgba(50,173,230,.1)"><i data-lucide="droplet" style="width:18px;height:18px;color:var(--teal)"></i></div>
+        <div class="row-body"><div class="row-title">+${e.ml} ml</div><div class="row-sub">${e.time}</div></div>
+        <span class="badge badge-blue">+${e.ml}ml</span>
+      </div>`
+        ).join('');
+      }
+
+      // Weekly
+      const wk = document.getElementById('water-weekly');
+      const days7 = last7();
+      const maxW = Math.max(...days7.map(({ k }) => D[k]?.water || 0), S.waterGoal);
+      wk.innerHTML = `<div style="display:flex;gap:6px;align-items:flex-end;height:80px;margin-bottom:8px">` +
+        days7.map(({ k, label }) => {
+          const w = D[k]?.water || 0;
+          const h = Math.max(4, Math.round((w / maxW) * 70));
+          const color = w >= S.waterGoal ? 'var(--green)' : w > 0 ? 'var(--blue)' : '#E5E5EA';
+          return `<div class="week-bar-col"><div class="week-bar-fill" style="height:${h}px;background:${color}"></div><div class="week-bar-label">${label}</div></div>`;
+        }).join('') + `</div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--t3);font-weight:600">
+      <span>7-day avg: ${Math.round(days7.reduce((a, { k }) => a + (D[k]?.water || 0), 0) / 7)}ml</span>
+      <span>Goal: ${S.waterGoal}ml</span>
+    </div>`;
+      lucide.createIcons();
+    }
+
+    // ─── HABITS ───────────────────────────────
+    function toggleHabit(id) {
+      const day = getDay();
+      day.habits[id] = !day.habits[id];
+      save(); renderHabits(); renderToday();
+      if (day.habits[id] && navigator.vibrate) navigator.vibrate([10, 20, 10]);
+      // Check all done
+      const all = [...MORNING_HABITS, ...EVENING_HABITS, ...S.customHabits];
+      if (all.every(h => day.habits[h.id])) showMilestone('🌟', 'All Habits Done!', 'Perfect day! Every single habit completed!');
+    }
+
+    function renderHabitGroup(elId, habits) {
+      const day = getDay();
+      const el = document.getElementById(elId);
+      if (!el) return;
+      if (!habits.length) { el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--t3);font-size:14px">No habits here.</div>'; return; }
+      el.innerHTML = habits.map(h => {
+        const done = !!day.habits[h.id];
+        return `<div class="card-row" onclick="toggleHabit('${h.id}')">
+      <div class="row-icon" style="background:${done ? 'rgba(48,209,88,.1)' : 'rgba(142,142,147,.08)'}">
+        <i data-lucide="${h.icon}" style="width:18px;height:18px;color:${done ? 'var(--green)' : 'var(--t3)'}"></i>
+      </div>
+      <div class="row-body">
+        <div class="row-title" style="${done ? 'text-decoration:line-through;color:var(--t3)' : ''}">${h.label}</div>
+      </div>
+      <div class="check ${done ? 'on' : ''}"></div>
+    </div>`;
+      }).join('');
+    }
+
+    function renderHabits() {
+      renderHabitGroup('morning-list', MORNING_HABITS);
+      renderHabitGroup('evening-list', EVENING_HABITS);
+      const day = getDay();
+      const customEl = document.getElementById('custom-habit-list');
+      const custom = S.customHabits;
+      let html = '';
+      if (custom.length) {
+        html = custom.map(h => {
+          const done = !!day.habits[h.id];
+          return `<div class="card-row" onclick="toggleHabit('${h.id}')">
+        <div class="row-icon" style="background:${done ? 'rgba(48,209,88,.1)' : 'rgba(142,142,147,.08)'}">
+          <span style="font-size:18px">${h.icon}</span>
+        </div>
+        <div class="row-body">
+          <div class="row-title" style="${done ? 'text-decoration:line-through;color:var(--t3)' : ''}">${h.label}</div>
+          <div class="row-sub">${h.cat}</div>
+        </div>
+        <div class="check ${done ? 'on' : ''}"></div>
+      </div>`;
+        }).join('');
+      }
+      html += `<button onclick="openModal('m-add-habit')" class="card-row" style="width:100%;border:none;background:none;text-align:left;cursor:pointer;color:var(--blue);font-family:inherit;font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px">
+    <i data-lucide="plus-circle" style="width:18px;height:18px"></i> Add Custom Habit
+  </button>`;
+      customEl.innerHTML = html;
+      renderDuo();
+      lucide.createIcons();
+    }
+
+    function renderDuo() {
+      const day = getDay();
+      const sub = document.getElementById('duo-sub');
+      const ln = document.getElementById('duo-lang-name');
+      const sd = document.getElementById('duo-streak-num');
+      const btn = document.getElementById('duo-btn');
+      if (sub) sub.textContent = S.duolingo.lang ? `${S.duolingo.flag} Learning` : 'Set language in Settings';
+      if (ln) ln.textContent = S.duolingo.lang || 'Duolingo';
+      if (sd) sd.textContent = S.duolingo.streak;
+      if (btn) {
+        if (day.duoDone) {
+          btn.textContent = '✅ Done for today!';
+          btn.style.background = 'rgba(48,209,88,.25)';
+          btn.style.borderColor = 'rgba(48,209,88,.4)';
+        } else {
+          btn.textContent = 'Mark Today Done ✓';
+          btn.style.background = 'rgba(255,255,255,.18)';
+          btn.style.borderColor = 'rgba(255,255,255,.3)';
+        }
+      }
+      const dotRow = document.getElementById('duo-week-dots');
+      if (dotRow) {
+        dotRow.innerHTML = last7().map(({ k, label }) => {
+          const done = D[k]?.duoDone;
+          return `<div class="duo-dot" style="background:${done ? 'rgba(48,209,88,.35)' : 'rgba(255,255,255,.12)'};color:${done ? '#fff' : 'rgba(255,255,255,.45)'}">${label[0]}</div>`;
+        }).join('');
+      }
+    }
+
+    function toggleDuo() {
+      const day = getDay();
+      day.duoDone = !day.duoDone;
+      if (day.duoDone) {
+        let streak = 0;
+        for (let i = 0; i < 365; i++) {
+          const d = new Date(); d.setDate(d.getDate() - i);
+          const k = d.toISOString().split('T')[0];
+          if (D[k]?.duoDone) streak++;
+          else if (i > 0) break;
+        }
+        S.duolingo.streak = streak;
+        S.duolingo.bestStreak = Math.max(S.duolingo.bestStreak, streak);
+        if (streak % 7 === 0 && streak > 0) showMilestone('🦜', `${streak} Day Streak!`, `${streak} days of ${S.duolingo.lang || 'language learning'}! You're unstoppable!`);
+        else toast(`${S.duolingo.flag || '🦜'} Duolingo done! 🔥`);
+      }
+      save(); renderDuo(); renderToday();
+    }
+
+    function pickLang(lang, flag) {
+      S.duolingo.lang = lang; S.duolingo.flag = flag;
+      save(); renderDuo(); renderSettings(); closeModal('m-lang');
+      toast(`${flag} ${lang} selected!`);
+    }
+    function saveCustomLang() {
+      const n = document.getElementById('lang-name-in').value.trim();
+      const f = document.getElementById('lang-flag-in').value.trim() || '🌐';
+      if (n) pickLang(n, f);
+    }
+
+    // ─── MEALS ────────────────────────────────
+    // Smart Input Dropdown logic
+    function showMealMenu() {
+      document.getElementById('meal-dropdown-menu').style.display = 'block';
+      filterMealMenu();
+    }
+
+    // Close meal dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      const wrap = document.getElementById('meal-input-wrap');
+      if (wrap && !wrap.contains(e.target)) {
+        document.getElementById('meal-dropdown-menu').style.display = 'none';
+      }
+    });
+
+    function filterMealMenu() {
+      const val = document.getElementById('meal-name-input').value.toLowerCase().trim();
+      const menu = document.getElementById('meal-dropdown-menu');
+      let filtered = S.savedMeals.filter(m => m.toLowerCase().includes(val));
+      
+      if (!filtered.length) {
+        menu.innerHTML = `<div style="padding:12px 16px;color:var(--t3);font-size:13px;text-align:center;font-style:italic;">Press Log Meal to save as a new item!</div>`;
+        return;
+      }
+      
+      menu.innerHTML = filtered.map(m => `
+        <div class="dropdown-item">
+          <span style="flex:1;font-size:15px;font-weight:600" onclick="selectMeal('${m}')">${m}</span>
+          <button class="dropdown-del" onclick="deleteSavedMeal('${m}', event)"><i data-lucide="x" style="width:16px;height:16px"></i></button>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function selectMeal(name) {
+      document.getElementById('meal-name-input').value = name;
+      document.getElementById('meal-dropdown-menu').style.display = 'none';
+    }
+
+    function deleteSavedMeal(name, e) {
+      e.stopPropagation();
+      S.savedMeals = S.savedMeals.filter(m => m !== name);
+      save();
+      filterMealMenu();
+    }
+
+    function setMealLoc(loc, el) {
+      mealLoc = loc;
+      document.querySelectorAll('#meal-loc-seg .seg-btn').forEach(b => b.classList.remove('on'));
+      el.classList.add('on');
+      document.getElementById('meal-home-opts').style.display = loc === 'home' ? 'block' : 'none';
+      document.getElementById('meal-out-opts').style.display = loc === 'outside' ? 'block' : 'none';
+    }
+    function setCalorie(v, el) { mealCalorie = v; document.querySelectorAll('#meal-home-opts .tag').forEach(b => b.classList.remove('on')); el.classList.add('on'); }
+    function setHealth(v, el) { mealHealth = v; document.querySelectorAll('#meal-out-opts .tag').forEach(b => b.classList.remove('on')); el.classList.add('on'); }
+    
+    function toggleMacro(type, el) {
+      if (mealMacros.includes(type)) {
+        mealMacros = mealMacros.filter(t => t !== type);
+        el.classList.remove('on');
+      } else {
+        mealMacros.push(type);
+        el.classList.add('on');
+      }
+    }
+
+    function logMeal() {
+      const name = document.getElementById('meal-name-input').value.trim();
+      if (!name) { toast('Enter what you ate!'); return; }
+      
+      // Auto save new meals
+      if (!S.savedMeals.includes(name)) {
+        S.savedMeals.unshift(name); // add to top
+        if (S.savedMeals.length > 20) S.savedMeals.pop(); // keep limit
+      }
+      
+      const type = document.getElementById('meal-type-sel').value;
+      const day = getDay();
+      
+      day.meals.push({ 
+        id: Date.now(), 
+        name, 
+        type, 
+        loc: mealLoc, 
+        calorie: mealLoc === 'home' ? mealCalorie : null, 
+        health: mealLoc === 'outside' ? mealHealth : null,
+        macros: mealLoc === 'home' ? [...mealMacros] : [],
+        time: now12() 
+      });
+      
+      save(); 
+      document.getElementById('meal-name-input').value = '';
+      document.getElementById('meal-dropdown-menu').style.display = 'none';
+      mealMacros = []; // reset macros
+      document.querySelectorAll('#macro-protein, #macro-carbs, #macro-fat').forEach(e => e.classList.remove('on'));
+      
+      renderMeals(); renderToday(); toast('Meal logged! 🍽️');
+    }
+
+    function deleteMeal(id) {
+      const day = getDay();
+      day.meals = day.meals.filter(m => m.id !== id);
+      save(); renderMeals(); renderToday();
+    }
+
+    function mealBadgeHtml(m) {
+      let html = '';
+      if (m.loc === 'outside') {
+        const map = { healthy: ['badge-green', 'Healthy'], okay: ['badge-orange', 'Okay'], unhealthy: ['badge-red', 'Unhealthy'] };
+        const [cls, lbl] = map[m.health] || map.okay;
+        html += `<span class="badge ${cls}">${lbl}</span><span class="badge badge-purple">Outside</span>`;
+      } else {
+        const map = { low: ['badge-green', 'Low Cal'], medium: ['badge-blue', 'Moderate'], high: ['badge-orange', 'High Cal'] };
+        const [cls, lbl] = map[m.calorie] || map.medium;
+        html += `<span class="badge ${cls}">${lbl}</span><span class="badge badge-gray">Home</span>`;
+        if (m.macros) {
+            if (m.macros.includes('protein')) html += `<span class="badge badge-emerald">Protein</span>`;
+            if (m.macros.includes('carbs')) html += `<span class="badge badge-orange">Carbs</span>`;
+            if (m.macros.includes('fat')) html += `<span class="badge badge-red">Fat</span>`;
+        }
+      }
+      return html;
+    }
+
+    function renderMeals() {
+      const day = getDay();
+      const container = document.getElementById('meals-by-type');
+      if (!container) return;
+      container.innerHTML = MEAL_TYPES.map(type => {
+        const items = (day.meals || []).filter(m => m.type === type.key);
+        return `<div class="card" style="margin-bottom:10px">
+      <div class="meal-type-header">
+        <div class="meal-type-left">
+          <span class="meal-type-icon">${type.icon}</span>
+          <div>
+            <div class="meal-type-name">${type.label}</div>
+            <div class="meal-type-count">${items.length} item${items.length !== 1 ? 's' : ''}</div>
+          </div>
+        </div>
+      </div>
+      ${items.length === 0 ? '<div style="padding:12px 16px;color:var(--t3);font-size:13px;font-style:italic">Nothing logged yet</div>' :
+            items.map(m => `<div class="card-row" style="cursor:default">
+          <div class="row-body">
+            <div class="row-title">${m.name}</div>
+            <div style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap">${mealBadgeHtml(m)}</div>
+          </div>
+          <span style="font-size:11px;color:var(--t3)">${m.time}</span>
+          <button class="txn-del" onclick="deleteMeal(${m.id})">
+            <i data-lucide="x" style="width:16px;height:16px"></i>
+          </button>
+        </div>`).join('')
+          }
+    </div>`;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    // ─── MONEY ────────────────────────────────
+    function saveBalance() {
+      const v = parseFloat(document.getElementById('balance-in').value);
+      if (!isNaN(v) && v >= 0) {
+        S.bankBalance = v; save();
+        closeModal('m-edit-balance'); renderMoney(); renderToday(); renderSettings();
+        toast('Balance updated! 💰');
+      }
+    }
+    function saveLimit() {
+      const v = parseFloat(document.getElementById('limit-in').value);
+      if (!isNaN(v) && v > 0) {
+        S.dailyLimit = v; save();
+        closeModal('m-set-limit'); renderMoney(); renderSettings();
+        toast('Spending limit set!');
+      }
+    }
+
+    function setTxnType(type, el) {
+      txnType = type;
+      document.querySelectorAll('#txn-type-seg .seg-btn').forEach(b => b.classList.remove('on'));
+      el.classList.add('on');
+      
+      const catWrap = document.getElementById('expense-cats-wrap');
+      const btn = document.getElementById('txn-btn');
+      
+      if (type === 'income') {
+        catWrap.style.display = 'none';
+        btn.innerHTML = '<i data-lucide="plus-circle" style="width:18px;height:18px;vertical-align:middle;margin-right:4px"></i>Add Income';
+        btn.style.background = 'var(--green)';
+      } else {
+        catWrap.style.display = 'block';
+        btn.innerHTML = '<i data-lucide="minus-circle" style="width:18px;height:18px;vertical-align:middle;margin-right:4px"></i>Log Expense';
+        btn.style.background = 'var(--red)';
+      }
+      lucide.createIcons();
+    }
+
+    function logTransaction() {
+      const note = document.getElementById('expense-note').value.trim();
+      const amount = parseFloat(document.getElementById('expense-amount').value);
+      if (!note || isNaN(amount) || amount <= 0) { toast('Fill in note and amount!'); return; }
+      
+      const day = getDay();
+      day.expenses = day.expenses || [];
+      
+      const type = txnType;
+      const cat = type === 'expense' ? expCat : 'income'; // Income doesn't use the standard expense cats
+      
+      day.expenses.push({ id: Date.now(), note, amount, cat, type, time: now12() });
+      
+      if (type === 'expense') {
+        S.bankBalance = Math.max(0, S.bankBalance - amount);
+      } else {
+        S.bankBalance = (S.bankBalance || 0) + amount;
+      }
+      
+      save();
+      document.getElementById('expense-note').value = '';
+      document.getElementById('expense-amount').value = '';
+      renderMoney(); renderToday(); renderSettings();
+      
+      // Alerts
+      if (type === 'expense') {
+        const todaySpent = getTodaySpent();
+        const pct = todaySpent / S.dailyLimit;
+        if (pct >= 1) showMilestone('🚨', 'Limit Exceeded!', `You've spent ${RUPEE}${todaySpent.toLocaleString()} today. Daily limit: ${RUPEE}${S.dailyLimit.toLocaleString()}`, 'Got it 😬', 'var(--red)');
+        else if (pct >= 0.8) toast(`⚠️ 80% of daily limit used!`);
+        else toast(`−${RUPEE}${amount} logged! 💸`);
+      } else {
+        toast(`+${RUPEE}${amount} added! 💰`);
+      }
+    }
+
+    function undoTransaction() {
+      const day = getDay();
+      if (!day.expenses || !day.expenses.length) return;
+      const last = day.expenses.pop();
+      
+      if (last.type === 'income') {
+          S.bankBalance = Math.max(0, (S.bankBalance || 0) - last.amount);
+      } else {
+          S.bankBalance = (S.bankBalance || 0) + last.amount;
+      }
+      
+      save(); renderMoney(); renderToday(); renderSettings(); toast('Transaction undone ↩️');
+    }
+
+    function deleteTransaction(id) {
+      const day = getDay();
+      const e = (day.expenses || []).find(x => x.id === id);
+      if (e) { 
+          if (e.type === 'income') S.bankBalance = Math.max(0, (S.bankBalance || 0) - e.amount);
+          else S.bankBalance = (S.bankBalance || 0) + e.amount;
+      }
+      day.expenses = (day.expenses || []).filter(x => x.id !== id);
+      save(); renderMoney(); renderToday(); renderSettings(); toast('Deleted');
+    }
+
+    function getTodaySpent(dayObj = null) {
+      const d = dayObj || getDay();
+      // Ensure we only sum up expenses, not income
+      return (d.expenses || []).filter(e => e.type !== 'income').reduce((a, e) => a + e.amount, 0);
+    }
+
+    function buildExpenseCats() {
+      const el = document.getElementById('expense-cats');
+      if (!el) return;
+      el.innerHTML = EXP_CATS.map(c =>
+        `<button class="cat-chip ${c.id === expCat ? 'on' : ''}" onclick="pickExpCat('${c.id}',this)">
+      <span class="cat-chip-icon">${c.icon}</span>
+      <span class="cat-chip-label">${c.label}</span>
+    </button>`
+      ).join('');
+    }
+    function pickExpCat(id, el) {
+      expCat = id;
+      document.querySelectorAll('.cat-chip').forEach(b => b.classList.remove('on'));
+      el.classList.add('on');
+    }
+
+    function renderMoney() {
+      const day = getDay();
+      const todaySpent = getTodaySpent();
+      const balance = S.bankBalance || 0;
+      const limit = S.dailyLimit || 500;
+
+      // Hero
+      document.getElementById('money-balance').textContent = RUPEE + balance.toLocaleString('en-IN');
+      document.getElementById('money-today-spent-hero').textContent = RUPEE + todaySpent.toLocaleString('en-IN');
+
+      // Spending ring
+      const pct = Math.min(todaySpent / limit, 1);
+      const ringColor = pct < 0.6 ? '#30D158' : pct < 0.85 ? '#FF9F0A' : '#FF453A';
+      const arc = document.getElementById('spend-ring-arc');
+      arc.style.stroke = ringColor;
+      arc.style.strokeDashoffset = 314.16 - (314.16 * pct);
+      document.getElementById('spend-ring-pct').textContent = Math.round(pct * 100) + '%';
+      document.getElementById('spend-ring-pct').style.color = ringColor;
+      document.getElementById('spend-today-num').textContent = RUPEE + todaySpent.toLocaleString('en-IN');
+      document.getElementById('spend-limit-display').textContent = RUPEE + limit.toLocaleString('en-IN');
+
+      // Category breakdown (filter out income)
+      const catBreak = document.getElementById('cat-breakdown');
+      const expensesOnly = (day.expenses || []).filter(e => e.type !== 'income');
+      if (expensesOnly.length) {
+        const cats = {};
+        expensesOnly.forEach(e => { cats[e.cat] = (cats[e.cat] || 0) + e.amount; });
+        const total = Object.values(cats).reduce((a, b) => a + b, 0);
+        const sorted = Object.entries(cats).sort((a, b) => b[1] - a[1]);
+        catBreak.innerHTML = `<div style="font-size:12px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Category Breakdown</div>` +
+          sorted.map(([id, amt]) => {
+            const cat = EXP_CATS.find(c => c.id === id) || { icon: '📦', label: id };
+            const pct = Math.round((amt / total) * 100);
+            return `<div class="cat-bar-item">
+          <span class="cat-bar-icon">${cat.icon}</span>
+          <div class="cat-bar-wrap"><div class="cat-bar-fill" style="width:${pct}%;background:var(--emerald)"></div></div>
+          <span class="cat-bar-amt">${RUPEE}${amt.toLocaleString('en-IN')}</span>
+        </div>`;
+          }).join('');
+      } else {
+        catBreak.innerHTML = '';
+      }
+
+      // Transactions
+      const txnEl = document.getElementById('txn-list');
+      const txns = day.expenses || [];
+      if (!txns.length) {
+        txnEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--t3);font-size:14px">No transactions today 🎉</div>';
+      } else {
+        txnEl.innerHTML = [...txns].reverse().map(e => {
+          const isInc = e.type === 'income';
+          const cat = isInc ? { icon: '💵', label: 'Income' } : (EXP_CATS.find(c => c.id === e.cat) || { icon: '📦', label: 'Other' });
+          const sign = isInc ? '+' : '−';
+          const colorClass = isInc ? 'var(--green)' : 'var(--red)';
+          const bgClass = isInc ? 'rgba(48,209,88,.1)' : 'rgba(255,69,58,.1)';
+          
+          return `<div class="txn-item">
+        <div class="txn-icon-wrap" style="background:${bgClass}">${cat.icon}</div>
+        <div class="txn-body">
+          <div class="txn-name">${e.note}</div>
+          <div class="txn-meta">${cat.label} • ${e.time}</div>
+        </div>
+        <div class="txn-amount" style="color:${colorClass}">${sign}${RUPEE}${e.amount.toLocaleString('en-IN')}</div>
+        <button class="txn-del" onclick="deleteTransaction(${e.id})"><i data-lucide="x" style="width:16px;height:16px"></i></button>
+      </div>`;
+        }).join('');
+      }
+
+      // Weekly spend (filter out income)
+      const wkEl = document.getElementById('money-weekly');
+      const days7 = last7();
+      const maxSpend = Math.max(...days7.map(({ k }) => getTodaySpent(D[k])), limit, 1);
+      wkEl.innerHTML = `<div style="display:flex;gap:6px;align-items:flex-end;height:80px;margin-bottom:8px">` +
+        days7.map(({ k, label }) => {
+          const spent = getTodaySpent(D[k]);
+          const h = Math.max(4, Math.round((spent / maxSpend) * 70));
+          const over = spent > limit;
+          return `<div class="week-bar-col"><div class="week-bar-fill" style="height:${h}px;background:${over ? 'var(--red)' : spent > 0 ? 'var(--emerald)' : '#E5E5EA'}"></div><div class="week-bar-label">${label}</div></div>`;
+        }).join('') + `</div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--t3);font-weight:600">
+      <span>7-day total: ${RUPEE}${days7.reduce((a, { k }) => a + getTodaySpent(D[k]), 0).toLocaleString('en-IN')}</span>
+      <span style="color:var(--red)">Limit: ${RUPEE}${limit}</span>
+    </div>`;
+
+      lucide.createIcons();
+    }
+
+    // ─── PROJECTS (Now Global across days) ───
+    let habitCatSel = 'morning';
+    function pickHabitCat(cat, el) {
+      habitCatSel = cat;
+      document.querySelectorAll('#habit-cat-sel .tag').forEach(b => b.classList.remove('on'));
+      el.classList.add('on');
+    }
+    function pickProjColor(col, el) {
+      projColor = col;
+      document.querySelectorAll('#proj-color-sel .tag').forEach(b => b.classList.remove('on'));
+      el.classList.add('on');
+    }
+    function addTaskInput() {
+      const wrap = document.getElementById('task-inputs-wrap');
+      const n = wrap.querySelectorAll('.task-inp').length + 1;
+      const inp = document.createElement('input');
+      inp.className = 'ios-input task-inp'; inp.placeholder = `Task ${n}...`; inp.style.marginBottom = '6px';
+      wrap.appendChild(inp);
+    }
+    
+    function saveProject() {
+      const name = document.getElementById('proj-name-in').value.trim();
+      if (!name) { toast('Enter a project name!'); return; }
+      const tasks = [...document.querySelectorAll('.task-inp')].map(i => i.value.trim()).filter(Boolean).map(label => ({ label, done: false }));
+      
+      const id = editProjId || ('p_' + Date.now());
+      // Saving to GLOBAL settings state, not Daily log
+      S.projects[id] = { id, name, color: projColor, tasks };
+      save(); closeModal('m-add-project'); renderProjects(); renderToday();
+      toast(editProjId ? 'Project updated!' : 'Project created! 💼');
+      editProjId = null;
+    }
+    
+    function toggleTask(projId, i) {
+      const p = S.projects[projId];
+      if (!p) return;
+      p.tasks[i].done = !p.tasks[i].done;
+      save(); renderProjects(); renderToday();
+    }
+    
+    function deleteProject(id) {
+      delete S.projects[id];
+      save(); renderProjects(); renderToday(); toast('Project deleted');
+    }
+    
+    function openEditProject(id) {
+      const p = S.projects[id];
+      if (!p) return;
+      editProjId = id;
+      document.getElementById('proj-modal-title').textContent = 'Edit Project';
+      document.getElementById('proj-name-in').value = p.name;
+      projColor = p.color || 'blue';
+      document.querySelectorAll('#proj-color-sel .tag').forEach(b => { b.classList.toggle('on', b.dataset.color === projColor); });
+      const wrap = document.getElementById('task-inputs-wrap');
+      wrap.innerHTML = p.tasks.map((t, i) => `<input class="ios-input task-inp" value="${t.label}" placeholder="Task ${i + 1}..." style="margin-bottom:6px">`).join('');
+      openModal('m-add-project');
+    }
+    
+    function renderProjects() {
+      const projs = Object.values(S.projects || {});
+      const el = document.getElementById('projects-list');
+      if (!el) return;
+      if (!projs.length) {
+        el.innerHTML = '<div class="card card-pad" style="text-align:center;color:var(--t3);font-size:14px;padding:32px">No projects yet.<br>Create one to get started! 💼</div>';
+        return;
+      }
+      el.innerHTML = projs.map(p => {
+        const done = p.tasks.filter(t => t.done).length, total = p.tasks.length;
+        const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+        const col = COLOR_MAP[p.color] || COLOR_MAP.blue;
+        return `<div class="proj-card" style="border-left-color:${col}">
+      <div class="proj-hdr" style="display:flex;align-items:flex-start;justify-content:space-between">
+        <div>
+          <div class="proj-title">${p.name}</div>
+          <div class="proj-meta">${done}/${total} tasks · ${pct}%</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button onclick="openEditProject('${p.id}')" style="background:none;border:none;color:var(--blue);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Edit</button>
+          <button onclick="deleteProject('${p.id}')" style="background:none;border:none;color:var(--red);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Delete</button>
+        </div>
+      </div>
+      <div class="proj-bar-wrap"><div class="proj-bar-fill" style="width:${pct}%;background:${col}"></div></div>
+      ${p.tasks.map((t, i) => `<div class="task-row ${t.done ? 'task-done' : ''}" onclick="toggleTask('${p.id}',${i})">
+        <div class="check ${t.done ? 'on' : ''}" style="${t.done ? '' : 'border-color:' + col}"></div>
+        <span class="task-label">${t.label}</span>
+      </div>`).join('')}
+    </div>`;
+      }).join('');
+    }
+
+    // ─── HABITS MODAL ─────────────────────────
+    function saveCustomHabit() {
+      const name = document.getElementById('habit-name-in').value.trim();
+      const icon = document.getElementById('habit-icon-in').value.trim() || '⭐';
+      if (!name) return;
+      S.customHabits.push({ id: 'ch_' + Date.now(), label: name, icon, cat: habitCatSel });
+      save(); closeModal('m-add-habit');
+      renderHabits(); renderSettings(); toast('Habit added!');
+    }
+    function deleteCustomHabit(id) {
+      S.customHabits = S.customHabits.filter(h => h.id !== id);
+      save(); renderHabits(); renderSettings(); toast('Habit removed');
+    }
+
+    // ─── TODAY ────────────────────────────────
+    function calcStreak() {
+      let streak = 0;
+      for (let i = 0; i < 366; i++) {
+        const d = new Date(); d.setDate(d.getDate() - i);
+        const k = d.toISOString().split('T')[0];
+        const day = D[k];
+        if (!day) break;
+        const allH = [...MORNING_HABITS, ...EVENING_HABITS, ...S.customHabits];
+        const hasActivity = allH.some(h => day.habits?.[h.id]) || day.water > 0 || (day.meals || []).length > 0 || day.duoDone || (day.expenses || []).length > 0;
+        if (hasActivity) streak++;
+        else if (i > 0) break;
+      }
+      return streak;
+    }
+
+    function getDayScore(k) {
+      const day = D[k];
+      if (!day) return 0;
+      const allH = [...MORNING_HABITS, ...EVENING_HABITS, ...S.customHabits];
+      const hScore = allH.length ? (allH.filter(h => day.habits?.[h.id]).length / allH.length) * 35 : 0;
+      const wScore = Math.min((day.water || 0) / S.waterGoal, 1) * 25;
+      const mScore = Math.min((day.meals || []).length / 3, 1) * 20;
+      const dScore = day.duoDone ? 10 : 0;
+      const monScore = (day.expenses || []).length > 0 ? 10 : 0;
+      return Math.round(hScore + wScore + mScore + dScore + monScore);
+    }
+
+    function renderToday() {
+      const day = getDay();
+      const streak = calcStreak();
+      document.getElementById('s-streak').textContent = streak;
+      const msgs = ['Start your streak today!', 'First day! Let\'s go! 💪', '2 days! Building habits!', '3 days strong! 🔥', 'Keep going!', 'Almost a week!', 'One week! Amazing! 🎉', 'Two weeks! 🏆', 'Three weeks! 🌟', '30 days! Legend! 👑'];
+      document.getElementById('s-streak-msg').textContent = streak < msgs.length ? msgs[streak] : `${streak} days and counting! 🔥`;
+
+      // Water tile
+      const wp = Math.min(Math.round((day.water / S.waterGoal) * 100), 100);
+      document.getElementById('s-water').textContent = day.water + 'ml';
+      document.getElementById('s-water-pct').textContent = wp + '%';
+      document.getElementById('s-water-pct').className = 'badge ' + (wp >= 100 ? 'badge-green' : wp >= 60 ? 'badge-blue' : 'badge-gray');
+
+      // Habits tile
+      const allH = [...MORNING_HABITS, ...EVENING_HABITS, ...S.customHabits];
+      const doneH = allH.filter(h => day.habits?.[h.id]).length;
+      const hp = allH.length ? Math.round((doneH / allH.length) * 100) : 0;
+      document.getElementById('s-habits').textContent = `${doneH}/${allH.length}`;
+      document.getElementById('s-habit-pct').textContent = hp + '%';
+      document.getElementById('s-habit-pct').className = 'badge ' + (hp >= 100 ? 'badge-green' : hp >= 50 ? 'badge-blue' : 'badge-gray');
+
+      // Money tile
+      const bal = S.bankBalance || 0;
+      const todaySpent = getTodaySpent();
+      document.getElementById('s-balance').textContent = RUPEE + bal.toLocaleString('en-IN');
+      document.getElementById('s-spend-badge').textContent = '−' + RUPEE + todaySpent.toLocaleString('en-IN');
+
+      // Duo tile
+      document.getElementById('s-duo-flag').textContent = S.duolingo.flag || '🦜';
+      document.getElementById('s-duo-badge').textContent = day.duoDone ? '✅' : '–';
+      document.getElementById('s-duo-badge').className = 'badge ' + (day.duoDone ? 'badge-green' : 'badge-gray');
+
+      // Insight card
+      const insights = [];
+      if (wp >= 100) insights.push('🎉 Hydration goal crushed! Your body thanks you.');
+      if (hp >= 100) insights.push('🌟 All habits done! Perfect day in the making.');
+      if (todaySpent > S.dailyLimit * 0.8) insights.push(`⚠️ You've used ${Math.round((todaySpent / S.dailyLimit) * 100)}% of today's spending limit.`);
+      if (day.duoDone && S.duolingo.lang) insights.push(`🦜 ${S.duolingo.flag} ${S.duolingo.lang} done! Streak: ${S.duolingo.streak} days.`);
+      if (doneH > 0 && doneH < allH.length) insights.push(`✅ ${doneH} of ${allH.length} habits done. ${allH.length - doneH} to go!`);
+      const insightCard = document.getElementById('insight-card');
+      if (insights.length) {
+        insightCard.style.display = 'flex';
+        document.getElementById('insight-text').textContent = insights[0];
+      } else {
+        insightCard.style.display = 'none';
+      }
+
+      // Quick habits
+      const qh = document.getElementById('today-habits-quick');
+      if (qh) {
+        qh.innerHTML = MORNING_HABITS.map(h => {
+          const done = !!day.habits?.[h.id];
+          return `<div class="card-row" onclick="toggleHabit('${h.id}');renderToday()">
+        <div class="row-icon" style="background:${done ? 'rgba(48,209,88,.1)' : 'rgba(142,142,147,.08)'}">
+          <i data-lucide="${h.icon}" style="width:18px;height:18px;color:${done ? 'var(--green)' : 'var(--t3)'}"></i>
+        </div>
+        <div class="row-body">
+          <div class="row-title" style="${done ? 'text-decoration:line-through;color:var(--t3)' : ''}">${h.label}</div>
+        </div>
+        <div class="check ${done ? 'on' : ''}"></div>
+      </div>`;
+        }).join('') + `<button onclick="goTab('habits')" style="width:100%;padding:12px 16px;border:none;background:none;color:var(--blue);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;border-top:0.5px solid var(--sep);display:flex;align-items:center;justify-content:center;gap:6px">
+      <i data-lucide="arrow-right" style="width:16px;height:16px"></i> All Habits
+    </button>`;
+      }
+
+      // Meals preview
+      const mp = document.getElementById('today-meals-preview');
+      if (mp) {
+        const meals = (day.meals || []).slice(-3).reverse();
+        if (!meals.length) {
+          mp.innerHTML = '<div style="color:var(--t3);font-size:14px;text-align:center;padding:8px 0">Nothing logged yet 🍽️</div>';
+        } else {
+          mp.innerHTML = meals.map(m => `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:0.5px solid var(--sep)">
+        <span style="font-size:18px">${MEAL_TYPES.find(t => t.key === m.type)?.icon || '🍽️'}</span>
+        <span style="flex:1;font-size:14px;font-weight:600">${m.name}</span>
+        <span style="font-size:11px;color:var(--t3)">${m.time}</span>
+      </div>`).join('');
+        }
+      }
+
+      // Money snap
+      const ms = document.getElementById('today-money-snap');
+      if (ms) {
+        const txns = day.expenses || [];
+        if (!txns.length) {
+          ms.innerHTML = '<div style="color:var(--t3);font-size:14px;text-align:center;padding:8px 0">No transactions logged today 💸</div>';
+        } else {
+          ms.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span style="font-size:14px;font-weight:600;color:var(--t3)">Today's spend</span>
+        <span style="font-size:20px;font-weight:800;color:var(--red)">−${RUPEE}${todaySpent.toLocaleString('en-IN')}</span>
+      </div>` + txns.slice(-3).reverse().map(e => {
+            const isInc = e.type === 'income';
+            const cat = isInc ? { icon: '💵' } : (EXP_CATS.find(c => c.id === e.cat) || { icon: '📦' });
+            const sign = isInc ? '+' : '−';
+            const color = isInc ? 'var(--green)' : 'var(--red)';
+            return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-top:0.5px solid var(--sep)">
+          <span style="font-size:16px">${cat.icon}</span>
+          <span style="flex:1;font-size:13px;font-weight:600">${e.note}</span>
+          <span style="font-size:13px;font-weight:700;color:${color}">${sign}${RUPEE}${e.amount.toLocaleString('en-IN')}</span>
+        </div>`;
+          }).join('') + `<button onclick="goTab('money')" style="width:100%;padding:10px;border:none;background:none;color:var(--blue);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:8px">View All →</button>`;
+        }
+      }
+
+      lucide.createIcons();
+    }
+
+    // ─── HISTORY ──────────────────────────────
+    function renderHistory() {
+      const hm = document.getElementById('heatmap');
+      const cells = [];
+      for (let i = 34; i >= 0; i--) {
+        const d = new Date(); d.setDate(d.getDate() - i);
+        const k = d.toISOString().split('T')[0];
+        const score = getDayScore(k);
+        const alpha = score === 0 ? 0.06 : score < 30 ? 0.2 : score < 60 ? 0.45 : score < 80 ? 0.7 : 1;
+        cells.push(`<div class="hm-cell" style="background:rgba(0,122,255,${alpha})" title="${d.toLocaleDateString()}: ${score}%"></div>`);
+      }
+      hm.innerHTML = cells.join('');
+
+      const list = document.getElementById('history-list');
+      const empty = document.getElementById('history-empty');
+      const entries = Object.entries(D)
+        .filter(([k, d]) => d && (d.water > 0 || (d.meals || []).length > 0 || Object.values(d.habits || {}).some(Boolean) || d.duoDone || (d.expenses || []).length > 0))
+        .sort(([a], [b]) => b.localeCompare(a))
+        .slice(0, 40);
+
+      if (!entries.length) { list.innerHTML = ''; empty.style.display = 'block'; return; }
+      empty.style.display = 'none';
+
+      list.innerHTML = entries.map(([k, day]) => {
+        const date = new Date(k + 'T12:00:00');
+        const isToday = k === TODAY;
+        const dateStr = isToday ? 'Today' : date.toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' });
+        const score = getDayScore(k);
+        const scoreColor = score >= 80 ? 'var(--green)' : score >= 50 ? 'var(--orange)' : 'var(--t3)';
+        const allH = [...MORNING_HABITS, ...EVENING_HABITS, ...S.customHabits];
+        const doneH = allH.filter(h => day.habits?.[h.id]).length;
+        const todayMoney = getTodaySpent(day);
+        return `<div class="hist-day">
+      <div class="hist-day-hdr">
+        <span class="hist-day-date">${dateStr}</span>
+        <span style="font-size:12px;font-weight:800;color:${scoreColor}">${score}% done</span>
+      </div>
+      <div class="hist-stat-row">
+        <div class="hist-stat"><div class="hist-stat-val" style="color:var(--teal)">${day.water || 0}</div><div class="hist-stat-label">ml Water</div></div>
+        <div class="hist-stat"><div class="hist-stat-val" style="color:var(--green)">${doneH}/${allH.length}</div><div class="hist-stat-label">Habits</div></div>
+        <div class="hist-stat"><div class="hist-stat-val" style="color:var(--orange)">${(day.meals || []).length}</div><div class="hist-stat-label">Meals</div></div>
+        <div class="hist-stat"><div class="hist-stat-val" style="color:var(--red)">${todayMoney > 0 ? RUPEE + todayMoney.toLocaleString('en-IN') : '₹0'}</div><div class="hist-stat-label">Spent</div></div>
+      </div>
+      ${(day.meals || []).length > 0 ? `<div style="padding:8px 16px;display:flex;flex-wrap:wrap;gap:4px;border-top:0.5px solid var(--sep)">
+        ${(day.meals || []).map(m => `<span style="font-size:11px;background:var(--card2);border-radius:20px;padding:3px 9px;font-weight:600">${m.name}</span>`).join('')}
+      </div>`: ''}
+    </div>`;
+      }).join('');
+    }
+
+    // ─── SETTINGS ─────────────────────────────
+    function saveName() {
+      const v = document.getElementById('name-in').value.trim();
+      if (!v) return;
+      S.name = v; save(); renderSettings(); closeModal('m-name'); toast(`Hi ${v}! 👋`);
+    }
+
+    function renderSettings() {
+      document.getElementById('s-avatar').textContent = S.name ? S.name[0].toUpperCase() : '?';
+      document.getElementById('s-name').textContent = S.name || 'Set Your Name';
+      document.getElementById('s-water-goal-val').textContent = S.waterGoal + ' ml';
+      document.getElementById('s-bank-val').textContent = RUPEE + (S.bankBalance || 0).toLocaleString('en-IN');
+      document.getElementById('s-limit-val').textContent = RUPEE + (S.dailyLimit || 500).toLocaleString('en-IN');
+      document.getElementById('s-lang-sub').textContent = S.duolingo.lang ? `${S.duolingo.flag} ${S.duolingo.lang}` : 'Not set';
+
+      // Monthly spend (filtering out income)
+      const now = new Date();
+      const prefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const monthlySpend = Object.entries(D).filter(([k]) => k.startsWith(prefix)).reduce((a, [, d]) => a + (d.expenses || []).filter(e => e.type !== 'income').reduce((x, e) => x + e.amount, 0), 0);
+      document.getElementById('s-monthly-spend').textContent = `${RUPEE}${monthlySpend.toLocaleString('en-IN')} this month`;
+
+      // Custom habits
+      const shEl = document.getElementById('settings-habit-list');
+      if (shEl) {
+        shEl.innerHTML = S.customHabits.length ? S.customHabits.map(h =>
+          `<div class="card-row" style="cursor:default">
+        <span style="font-size:20px">${h.icon}</span>
+        <div class="row-body"><div class="row-title">${h.label}</div><div class="row-sub">${h.cat}</div></div>
+        <button onclick="deleteCustomHabit('${h.id}')" style="background:none;border:none;color:var(--red);font-weight:700;cursor:pointer;font-size:13px;font-family:inherit">Remove</button>
+      </div>`
+        ).join('') : '<div style="padding:12px 16px;color:var(--t3);font-size:13px">No custom habits yet.</div>';
+      }
+      lucide.createIcons();
+    }
+
+    function resetAll() {
+      if (!confirm('Reset ALL data? This cannot be undone.')) return;
+      localStorage.clear(); location.reload();
+    }
+
+    // ─── MODAL HELPERS ────────────────────────
+    function openModal(id) {
+      document.getElementById(id).classList.add('open');
+      lucide.createIcons();
+    }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+    document.querySelectorAll('.modal-bg').forEach(m => {
+      m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+    });
+
+    // ─── MILESTONE ────────────────────────────
+    function showMilestone(emoji, title, msg, btnText = 'Awesome! 🎉', btnColor = 'var(--blue)') {
+      document.getElementById('ms-emoji').textContent = emoji;
+      document.getElementById('ms-title').textContent = title;
+      document.getElementById('ms-msg').textContent = msg;
+      
+      const btn = document.getElementById('ms-btn');
+      btn.textContent = btnText;
+      btn.style.background = btnColor;
+      
+      document.getElementById('milestone-bg').style.display = 'flex';
+      if (navigator.vibrate) navigator.vibrate([50, 80, 50]);
+      setTimeout(() => { initMilestoneCanvas(); animateMS(); }, 100);
+    }
+    
+    function closeMilestone() {
+      document.getElementById('milestone-bg').style.display = 'none';
+      if (msRenderer) { msRenderer.dispose(); msRenderer = null; }
+    }
+
+    // ─── TOAST ────────────────────────────────
+    function toast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.classList.add('show');
+      clearTimeout(t._timer);
+      t._timer = setTimeout(() => t.classList.remove('show'), 2400);
+    }
+
+    // ─── UTILS ────────────────────────────────
+    function now12() {
+      return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    function last7() {
+      const arr = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(); d.setDate(d.getDate() - i);
+        const k = d.toISOString().split('T')[0];
+        const label = i === 0 ? 'Today' : d.toLocaleDateString('en', { weekday: 'short' });
+        arr.push({ k, label });
+      }
+      return arr;
+    }
+
+    // ─── INIT APP SPECIFICS ───────────────────
+    function initAppContent() {
+      // Build expense categories
+      buildExpenseCats();
+      // Initial renders
+      renderToday();
+      renderWater();
+      renderHabits();
+      renderMeals();
+      renderMoney();
+      renderProjects();
+      renderSettings();
+      // Init Three.js after short delay to ensure DOM is visible
+      setTimeout(() => {
+        initStreakFlame();
+        init3DTilt();
+        lucide.createIcons();
+      }, 300);
+    }
+
+    // ─── INIT ─────────────────────────────────
+    function init() {
+      // Set date
+      document.getElementById('hdr-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+      // Ensure today exists
+      getDay();
+      
+      // Migrate old projects to global state
+      let migratedProj = false;
+      for (let k in D) {
+          if (D[k].projects && Object.keys(D[k].projects).length > 0) {
+              Object.assign(S.projects, D[k].projects);
+              delete D[k].projects;
+              migratedProj = true;
+          }
+      }
+      if (migratedProj) save();
+      else save(); // normal save
+
+      lucide.createIcons();
+      
+      // Check auth and bootstrap appropriate UI
+      checkAuthStatus();
+    }
+
+    window.addEventListener('load', init);
+  </script>
+</body>
+
+</html>
