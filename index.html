@@ -481,16 +481,18 @@ body { min-height: 100%; overflow-x: hidden; font-family: 'DM Sans', -apple-syst
       <input class="ios-input" id="meal-name-input" placeholder="What did you eat?" autocomplete="off" oninput="filterMealMenu()" onfocus="showMealMenu()">
       <div class="dropdown-menu" id="meal-dropdown-menu"></div>
     </div>
-    <select class="ios-select" id="meal-type-sel" style="margin-bottom:10px">
+    <select class="ios-select" id="meal-type-sel" style="margin-bottom:10px" onchange="toggleFastingOpts()">
       <option value="breakfast">🌅 Breakfast</option>
       <option value="lunch">☀️ Lunch</option>
       <option value="dinner">🌙 Dinner</option>
       <option value="snack">🍎 Snack</option>
+      <option value="fasting">⏳ Fasting</option>
     </select>
-    <div class="seg" style="margin-bottom:12px" id="meal-loc-seg">
-      <button class="seg-btn on" onclick="setMealLoc('home',this)">🏠 Home</button>
-      <button class="seg-btn" onclick="setMealLoc('outside',this)">🏪 Outside</button>
-    </div>
+    <div id="meal-additional-opts">
+      <div class="seg" style="margin-bottom:12px" id="meal-loc-seg">
+        <button class="seg-btn on" onclick="setMealLoc('home',this)">🏠 Home</button>
+        <button class="seg-btn" onclick="setMealLoc('outside',this)">🏪 Outside</button>
+      </div>
     <div id="meal-home-opts">
       <div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Calorie Count</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
@@ -512,6 +514,7 @@ body { min-height: 100%; overflow-x: hidden; font-family: 'DM Sans', -apple-syst
         <button class="tag" onclick="setHealth('okay',this)">🟡 Okay</button>
         <button class="tag" onclick="setHealth('unhealthy',this)">❌ Unhealthy</button>
       </div>
+    </div>
     </div>
     <button class="btn-primary" onclick="logMeal()"><i data-lucide="plus" style="width:18px;height:18px;vertical-align:middle;margin-right:4px"></i>Log Meal</button>
   </div>
@@ -739,6 +742,7 @@ const MEAL_TYPES = [
   {key:'lunch',icon:'☀️',label:'Lunch'},
   {key:'dinner',icon:'🌙',label:'Dinner'},
   {key:'snack',icon:'🍎',label:'Snack'},
+  {key:'fasting',icon:'⏳',label:'Fasting'},
 ];
 const EXP_CATS = [
   {id:'food',icon:'🍔',label:'Food'},{id:'transport',icon:'🚗',label:'Transport'},
@@ -1217,13 +1221,31 @@ function setMealLoc(loc,el){mealLoc=loc;document.querySelectorAll('#meal-loc-seg
 function setCalorie(v,el){mealCalorie=v;document.querySelectorAll('#meal-home-opts .tag:not(#macro-protein):not(#macro-carbs):not(#macro-fat)').forEach(b=>b.classList.remove('on'));el.classList.add('on');}
 function setHealth(v,el){mealHealth=v;document.querySelectorAll('#meal-out-opts .tag').forEach(b=>b.classList.remove('on'));el.classList.add('on');}
 function toggleMacro(type,el){if(mealMacros.includes(type)){mealMacros=mealMacros.filter(t=>t!==type);el.classList.remove('on');}else{mealMacros.push(type);el.classList.add('on');}}
+function toggleFastingOpts() {
+  const isFasting = document.getElementById('meal-type-sel').value === 'fasting';
+  const opts = document.getElementById('meal-additional-opts');
+  opts.style.opacity = isFasting ? '0.4' : '1';
+  opts.style.pointerEvents = isFasting ? 'none' : 'auto';
+}
 function logMeal() {
-  const name = document.getElementById('meal-name-input').value.trim();
+  let name = document.getElementById('meal-name-input').value.trim();
+  const type = document.getElementById('meal-type-sel').value;
+  if(type === 'fasting' && !name) name = 'Fasting';
   if (!name){toast('Enter what you ate!');return;}
   if (!S.savedMeals.includes(name)){S.savedMeals.unshift(name);if(S.savedMeals.length>20)S.savedMeals.pop();}
-  const type = document.getElementById('meal-type-sel').value;
+  
   const day = getDay();
-  day.meals.push({id:Date.now(),name,type,loc:mealLoc,calorie:mealLoc==='home'?mealCalorie:null,health:mealLoc==='outside'?mealHealth:null,macros:mealLoc==='home'?[...mealMacros]:[],time:now12()});
+  const isFasting = type === 'fasting';
+  day.meals.push({
+    id:Date.now(),
+    name,
+    type,
+    loc:isFasting?null:mealLoc,
+    calorie:isFasting?null:(mealLoc==='home'?mealCalorie:null),
+    health:isFasting?null:(mealLoc==='outside'?mealHealth:null),
+    macros:isFasting?[]:(mealLoc==='home'?[...mealMacros]:[]),
+    time:now12()
+  });
   save();
   document.getElementById('meal-name-input').value='';
   document.getElementById('meal-dropdown-menu').style.display='none';
